@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manuel du projet</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,sans-serif;font-size:14px;line-height:1.7;color:#1a1a1a;background:#fff;padding:40px;max-width:900px;margin:0 auto}
+  h1{font-size:26px;font-weight:700;color:#111;border-bottom:3px solid #2563eb;padding-bottom:10px;margin:32px 0 16px}
+  h2{font-size:20px;font-weight:600;color:#1d4ed8;border-bottom:1px solid #dbeafe;padding-bottom:6px;margin:28px 0 12px}
+  h3{font-size:16px;font-weight:600;color:#374151;margin:20px 0 8px}
+  h4{font-size:14px;font-weight:600;color:#6b7280;margin:16px 0 6px}
+  p{margin:8px 0}
+  code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:1px 5px;font-family:monospace;font-size:12px;color:#be185d}
+  pre{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:16px;overflow-x:auto;margin:12px 0}
+  pre code{background:none;border:none;color:#e2e8f0;font-size:12px;padding:0}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+  th{background:#1d4ed8;color:#fff;padding:8px 12px;text-align:left;font-weight:500}
+  td{padding:7px 12px;border-bottom:1px solid #e5e7eb}
+  tr:nth-child(even) td{background:#f8fafc}
+  tr:hover td{background:#eff6ff}
+  blockquote{border-left:4px solid #2563eb;background:#eff6ff;padding:10px 16px;margin:12px 0;border-radius:0 6px 6px 0;color:#1e40af;font-style:italic}
+  ul,ol{padding-left:20px;margin:8px 0}
+  li{margin:3px 0}
+  hr{border:none;border-top:2px solid #e5e7eb;margin:24px 0}
+  .page-break{page-break-before:always}
+  a{color:#2563eb;text-decoration:none}
+
+  /* Badges modules */
+  strong{color:#111;font-weight:600}
+
+  @media print{
+    body{padding:20px;max-width:100%}
+    pre{page-break-inside:avoid}
+    h2{page-break-before:auto}
+  }
+</style>
+</head>
+<body>
+<h1 id="manuel-du-projet-systeme-de-gestion">MANUEL DU PROJET — SYSTÈME DE GESTION</h1>
+
+<h2 id="document-officiel-de-reference-a-lire-obligatoirement-avant-tout-commit">Document officiel de référence — À lire obligatoirement avant tout commit</h2>
+
+<blockquote>
+  <p><strong>Version</strong> : 1.0<br />
+  <strong>Stack</strong> : PHP pur · PostgreSQL · CSS natif · MVC<br />
+  <strong>Équipes</strong> : 4 groupes · 1 dépôt Git commun  </p>
+</blockquote>
+
+<hr />
+
+<h2 id="table-des-matieres">TABLE DES MATIÈRES</h2>
+
+<ol>
+<li><a href="#1-structure-du-dépôt-git">Structure du dépôt Git</a></li>
+<li><a href="#2-règles-git--branches--commits">Règles Git — Branches &amp; Commits</a></li>
+<li><a href="#3-architecture-mvc--dossiers--fichiers">Architecture MVC — Dossiers &amp; Fichiers</a></li>
+<li><a href="#4-conventions-de-code-php">Conventions de code PHP</a></li>
+<li><a href="#5-système-de-layout--sidebar--header--content">Système de layout — Sidebar / Header / Content</a></li>
+<li><a href="#6-css--regles-dutilisation">CSS — Règles d'utilisation</a></li>
+<li><a href="#7-base-de-données--règles-daccès">Base de données — Règles d'accès</a></li>
+<li><a href="#8-système-dauthentification--droits">Système d'authentification &amp; droits</a></li>
+<li><a href="#9-génération-pdf--fpdf--tcpdf">Génération PDF — FPDF/TCPDF</a></li>
+<li><a href="#10-gestion-des-stubs-inter-modules">Gestion des stubs inter-modules</a></li>
+<li><a href="#11-tableau-des-responsabilités">Tableau des responsabilités</a></li>
+<li><a href="#12-checklist-avant-chaque-pull-request">Checklist avant chaque Pull Request</a></li>
+</ol>
+
+<hr />
+
+<h2 id="1-structure-du-depot-git">1. STRUCTURE DU DÉPÔT GIT</h2>
+
+<pre><code>/
+├── config/
+│   ├── app.php                  ← constantes globales (APP_NAME, BASE_URL, USE_STUBS…)
+│   └── database.php             ← connexion PDO PostgreSQL (NE PAS MODIFIER sans accord)
+│
+├── core/
+│   ├── Database.php             ← classe singleton PDO — Groupe 4
+│   ├── Controller.php           ← classe mère de tous les controllers — Groupe 4
+│   ├── Model.php                ← classe mère de tous les models — Groupe 4
+│   ├── Router.php               ← routeur central — Groupe 4
+│   └── Auth.php                 ← sessions &amp; droits — Groupe 4 (PRIORITÉ ABSOLUE)
+│
+├── modules/
+│   ├── approvisionnements/      ← Groupe 1
+│   │   ├── controllers/
+│   │   ├── models/
+│   │   ├── views/
+│   │   ├── services/
+│   │   ├── pdf/
+│   │   └── stubs/               ← stubs temporaires (supprimés à la livraison réelle)
+│   │
+│   ├── ventes/                  ← Groupe 2
+│   │   ├── controllers/
+│   │   ├── models/
+│   │   ├── views/
+│   │   ├── services/
+│   │   ├── pdf/
+│   │   └── stubs/
+│   │
+│   ├── structure/               ← Groupe 3
+│   │   ├── controllers/
+│   │   ├── models/
+│   │   ├── views/
+│   │   ├── services/
+│   │   └── stubs/
+│   │
+│   └── utilisateurs/            ← Groupe 4
+│       ├── controllers/
+│       ├── models/
+│       ├── views/
+│       └── services/
+│
+├── views/
+│   └── layouts/
+│       ├── base.php             ← layout principal (sidebar + header + content)
+│       ├── sidebar.php          ← sidebar commune à tous les modules
+│       ├── header.php           ← header commun
+│       └── login.php            ← layout sans sidebar (page de connexion)
+│
+├── public/
+│   ├── index.php                ← point d'entrée UNIQUE — NE PAS DUPLIQUER
+│   └── assets/
+│       ├── css/
+│       │   └── app.css          ← fichier CSS natif (éditer directement si besoin)
+│       ├── js/
+│       │   └── app.js           ← scripts globaux
+│       └── images/
+│           └── logo.png
+│
+├── vendor/
+│   └── fpdf/                    ← librairie PDF (commitée dans le dépôt)
+│
+├── (Le projet n'utilise plus Tailwind — styles dans public/assets/css/app.css)
+├── .gitignore
+└── README.md
+</code></pre>
+
+<hr />
+
+<h2 id="2-regles-git-branches-commits">2. RÈGLES GIT — BRANCHES &amp; COMMITS</h2>
+
+<h3 id="21-branches-autorisees">2.1 Branches autorisées</h3>
+
+<table>
+<thead>
+<tr>
+  <th>Branche</th>
+  <th>Rôle</th>
+  <th>Qui peut merger dedans</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>main</code></td>
+  <td>Version finale livrée au professeur</td>
+  <td>Chef de projet uniquement</td>
+</tr>
+<tr>
+  <td><code>develop</code></td>
+  <td>Intégration de tous les modules</td>
+  <td>Un représentant par groupe, après validation</td>
+</tr>
+<tr>
+  <td><code>feat/appros</code></td>
+  <td>Travail Groupe 1</td>
+  <td>Membres Groupe 1 uniquement</td>
+</tr>
+<tr>
+  <td><code>feat/ventes</code></td>
+  <td>Travail Groupe 2</td>
+  <td>Membres Groupe 2 uniquement</td>
+</tr>
+<tr>
+  <td><code>feat/structure</code></td>
+  <td>Travail Groupe 3</td>
+  <td>Membres Groupe 3 uniquement</td>
+</tr>
+<tr>
+  <td><code>feat/users</code></td>
+  <td>Travail Groupe 4</td>
+  <td>Membres Groupe 4 uniquement</td>
+</tr>
+</tbody>
+</table>
+
+<blockquote>
+  <p>⛔ <strong>Interdit</strong> : pousser directement sur <code>main</code> ou <code>develop</code> sans Pull Request validée.<br />
+  ⛔ <strong>Interdit</strong> : modifier un fichier appartenant à un autre groupe sans son accord écrit (message dans le groupe).</p>
+</blockquote>
+
+<h3 id="22-initialisation-du-depot-a-faire-une-seule-fois">2.2 Initialisation du dépôt (à faire une seule fois)</h3>
+
+<div class="codehilite">
+<pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/votre-org/votre-repo.git
+<span class="nb">cd</span><span class="w"> </span>votre-repo
+
+<span class="c1"># Créer sa branche depuis develop</span>
+git<span class="w"> </span>checkout<span class="w"> </span>develop
+git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>feat/appros<span class="w">   </span><span class="c1"># remplacer selon son groupe</span>
+git<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>feat/appros
+</code></pre>
+</div>
+
+<h3 id="23-routine-de-travail-quotidienne">2.3 Routine de travail quotidienne</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="c1"># 1. Toujours mettre à jour develop avant de travailler</span>
+git<span class="w"> </span>checkout<span class="w"> </span>develop
+git<span class="w"> </span>pull<span class="w"> </span>origin<span class="w"> </span>develop
+
+<span class="c1"># 2. Revenir sur sa branche et récupérer les mises à jour de develop</span>
+git<span class="w"> </span>checkout<span class="w"> </span>feat/appros
+git<span class="w"> </span>merge<span class="w"> </span>develop
+
+<span class="c1"># 3. Travailler, puis committer</span>
+git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;[APPROS] feat : formulaire création bon de commande fournisseur&quot;</span>
+
+<span class="c1"># 4. Pousser sa branche</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>feat/appros
+</code></pre>
+</div>
+
+<h3 id="24-format-obligatoire-des-messages-de-commit">2.4 Format obligatoire des messages de commit</h3>
+
+<pre><code>[MODULE] type : description courte en français (max 72 caractères)
+</code></pre>
+
+<p><strong>Modules autorisés</strong> : <code>APPROS</code> · <code>VENTES</code> · <code>STRUCTURE</code> · <code>USERS</code> · <code>CORE</code> · <code>LAYOUT</code> · <code>PDF</code></p>
+
+<p><strong>Types autorisés</strong> :</p>
+
+<table>
+<thead>
+<tr>
+  <th>Type</th>
+  <th>Utilisation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>feat</code></td>
+  <td>Nouvelle fonctionnalité</td>
+</tr>
+<tr>
+  <td><code>fix</code></td>
+  <td>Correction de bug</td>
+</tr>
+<tr>
+  <td><code>style</code></td>
+  <td>Modification CSS uniquement</td>
+</tr>
+<tr>
+  <td><code>refactor</code></td>
+  <td>Restructuration de code sans changement de comportement</td>
+</tr>
+<tr>
+  <td><code>chore</code></td>
+  <td>Tâche technique (suppression stub, renommage fichier…)</td>
+</tr>
+<tr>
+  <td><code>docs</code></td>
+  <td>Modification de documentation uniquement</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Exemples corrects :</strong></p>
+
+<pre><code>[APPROS] feat : ajout controller bon de réception
+[VENTES] fix : correction calcul remise sur facture client
+[CORE] feat : méthode Auth::can() implémentée
+[LAYOUT] style : ajout classe active sur item sidebar
+[PDF] feat : génération bon de livraison client FPDF
+[APPROS] chore : suppression stub AuthStub.php — core/Auth.php intégré
+</code></pre>
+
+<p><strong>Exemples incorrects :</strong></p>
+
+<pre><code>correction bug          ← pas de module, pas de type
+[appros] Ajout form     ← module en minuscules
+feat: fixed stuff       ← pas de module, description en anglais
+update                  ← ne dit rien
+</code></pre>
+
+<h3 id="25-procedure-de-pull-request-vers-develop">2.5 Procédure de Pull Request vers develop</h3>
+
+<ol>
+<li>S'assurer que sa branche est à jour avec <code>develop</code> (voir 2.3)</li>
+<li>Créer une Pull Request sur GitHub : <code>feat/monmodule</code> → <code>develop</code></li>
+<li>Le titre de la PR suit le même format que les commits</li>
+<li>Ajouter en description : la liste des fonctionnalités ajoutées</li>
+<li>Un membre d'un <strong>autre groupe</strong> doit approuver avant le merge</li>
+<li>Résoudre tous les conflits <strong>sur sa propre branche</strong> avant de demander la review</li>
+</ol>
+
+<h3 id="26-fichiers-a-ne-jamais-committer">2.6 Fichiers à ne jamais committer</h3>
+
+<p>Le fichier <code>.gitignore</code> doit contenir au minimum :</p>
+
+<pre><code>/vendor/composer/
+.env
+config/database.local.php
+*.log
+.DS_Store
+Thumbs.db
+node_modules/
+</code></pre>
+
+<blockquote>
+  <p>Les identifiants de base de données ne vont <strong>jamais</strong> dans un fichier commité.<br />
+  Chaque développeur crée son propre <code>config/database.local.php</code> (ignoré par Git)<br />
+  et <code>config/database.php</code> contient les valeurs par défaut pour le serveur commun.</p>
+</blockquote>
+
+<hr />
+
+<h2 id="3-architecture-mvc-dossiers-fichiers">3. ARCHITECTURE MVC — DOSSIERS &amp; FICHIERS</h2>
+
+<h3 id="31-nommage-des-fichiers">3.1 Nommage des fichiers</h3>
+
+<table>
+<thead>
+<tr>
+  <th>Type</th>
+  <th>Format</th>
+  <th>Exemple</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Controller</td>
+  <td><code>NomEntiteController.php</code></td>
+  <td><code>CommandeFournisseurController.php</code></td>
+</tr>
+<tr>
+  <td>Model</td>
+  <td><code>NomEntite.php</code></td>
+  <td><code>CommandeFournisseur.php</code></td>
+</tr>
+<tr>
+  <td>Service</td>
+  <td><code>NomEntiteService.php</code></td>
+  <td><code>StockService.php</code></td>
+</tr>
+<tr>
+  <td>Vue liste</td>
+  <td><code>nom_entite_liste.php</code></td>
+  <td><code>commande_liste.php</code></td>
+</tr>
+<tr>
+  <td>Vue formulaire</td>
+  <td><code>nom_entite_formulaire.php</code></td>
+  <td><code>commande_formulaire.php</code></td>
+</tr>
+<tr>
+  <td>Vue détail</td>
+  <td><code>nom_entite_detail.php</code></td>
+  <td><code>commande_detail.php</code></td>
+</tr>
+<tr>
+  <td>Classe PDF</td>
+  <td><code>NomEntitePDF.php</code></td>
+  <td><code>BonReceptionPDF.php</code></td>
+</tr>
+<tr>
+  <td>Stub</td>
+  <td><code>NomClasseStub.php</code></td>
+  <td><code>AuthStub.php</code></td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="32-structure-dun-controller">3.2 Structure d'un Controller</h3>
+
+<p>Chaque controller hérite de <code>Controller</code> et expose exactement ces méthodes :</p>
+
+<div class="codehilite">
+<pre><span></span><code><span class="cp">&lt;?php</span>
+<span class="c1">// modules/approvisionnements/controllers/CommandeFournisseurController.php</span>
+
+<span class="k">require_once</span> <span class="nx">ROOT</span> <span class="o">.</span> <span class="s1">&#39;/core/Controller.php&#39;</span><span class="p">;</span>
+<span class="k">require_once</span> <span class="nx">ROOT</span> <span class="o">.</span> <span class="s1">&#39;/core/Auth.php&#39;</span><span class="p">;</span>
+<span class="k">require_once</span> <span class="nx">ROOT</span> <span class="o">.</span> <span class="s1">&#39;/modules/approvisionnements/models/CommandeFournisseur.php&#39;</span><span class="p">;</span>
+<span class="k">require_once</span> <span class="nx">ROOT</span> <span class="o">.</span> <span class="s1">&#39;/modules/approvisionnements/services/CommandeService.php&#39;</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">CommandeFournisseurController</span> <span class="k">extends</span> <span class="nx">Controller</span> <span class="p">{</span>
+
+    <span class="k">private</span> <span class="nx">CommandeFournisseur</span> <span class="nv">$modele</span><span class="p">;</span>
+    <span class="k">private</span> <span class="nx">CommandeService</span> <span class="nv">$service</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="fm">__construct</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nx">Auth</span><span class="o">::</span><span class="na">verifierConnexion</span><span class="p">();</span> <span class="c1">// redirige si non connecté</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">modele</span>  <span class="o">=</span> <span class="k">new</span> <span class="nx">CommandeFournisseur</span><span class="p">();</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">service</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">CommandeService</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="c1">// GET — liste de toutes les commandes</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">index</span><span class="p">()</span><span class="o">:</span> <span class="nx">void</span> <span class="p">{</span>
+        <span class="nx">Auth</span><span class="o">::</span><span class="na">verifierDroit</span><span class="p">(</span><span class="s1">&#39;APPRO_LIRE&#39;</span><span class="p">);</span>
+        <span class="nv">$commandes</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">modele</span><span class="o">-&gt;</span><span class="na">listerTout</span><span class="p">();</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">rendrePage</span><span class="p">(</span><span class="s1">&#39;approvisionnements&#39;</span><span class="p">,</span> <span class="s1">&#39;commande_liste&#39;</span><span class="p">,</span> <span class="p">[</span>
+            <span class="s1">&#39;titre&#39;</span>     <span class="o">=&gt;</span> <span class="s1">&#39;Bons de commande fournisseur&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;commandes&#39;</span> <span class="o">=&gt;</span> <span class="nv">$commandes</span><span class="p">,</span>
+        <span class="p">]);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// GET — formulaire de création</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">creer</span><span class="p">()</span><span class="o">:</span> <span class="nx">void</span> <span class="p">{</span>
+        <span class="nx">Auth</span><span class="o">::</span><span class="na">verifierDroit</span><span class="p">(</span><span class="s1">&#39;APPRO_CREER&#39;</span><span class="p">);</span>
+        <span class="nv">$fournisseurs</span> <span class="o">=</span> <span class="p">(</span><span class="k">new</span> <span class="nx">Fournisseur</span><span class="p">())</span><span class="o">-&gt;</span><span class="na">listerTout</span><span class="p">();</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">rendrePage</span><span class="p">(</span><span class="s1">&#39;approvisionnements&#39;</span><span class="p">,</span> <span class="s1">&#39;commande_formulaire&#39;</span><span class="p">,</span> <span class="p">[</span>
+            <span class="s1">&#39;titre&#39;</span>        <span class="o">=&gt;</span> <span class="s1">&#39;Nouvelle commande fournisseur&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;fournisseurs&#39;</span> <span class="o">=&gt;</span> <span class="nv">$fournisseurs</span><span class="p">,</span>
+            <span class="s1">&#39;commande&#39;</span>     <span class="o">=&gt;</span> <span class="k">null</span><span class="p">,</span>
+        <span class="p">]);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// POST — enregistrement création</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">enregistrer</span><span class="p">()</span><span class="o">:</span> <span class="nx">void</span> <span class="p">{</span>
+        <span class="nx">Auth</span><span class="o">::</span><span class="na">verifierDroit</span><span class="p">(</span><span class="s1">&#39;APPRO_CREER&#39;</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">verifierMethode</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">);</span>
+        <span class="nv">$donnees</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">nettoyerPost</span><span class="p">([</span><span class="s1">&#39;fournisseur_id&#39;</span><span class="p">,</span> <span class="s1">&#39;date_commande&#39;</span><span class="p">,</span> <span class="s1">&#39;notes&#39;</span><span class="p">]);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">service</span><span class="o">-&gt;</span><span class="na">creerCommande</span><span class="p">(</span><span class="nv">$donnees</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">redirigerVers</span><span class="p">(</span><span class="s1">&#39;/approvisionnements/commandes&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// GET — formulaire d&#39;édition</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">editer</span><span class="p">(</span><span class="nx">int</span> <span class="nv">$identifiant</span><span class="p">)</span><span class="o">:</span> <span class="nx">void</span> <span class="p">{</span>
+        <span class="nx">Auth</span><span class="o">::</span><span class="na">verifierDroit</span><span class="p">(</span><span class="s1">&#39;APPRO_MODIFIER&#39;</span><span class="p">);</span>
+        <span class="nv">$commande</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">modele</span><span class="o">-&gt;</span><span class="na">trouverParId</span><span class="p">(</span><span class="nv">$identifiant</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">rendrePage</span><span class="p">(</span><span class="s1">&#39;approvisionnements&#39;</span><span class="p">,</span> <span class="s1">&#39;commande_formulaire&#39;</span><span class="p">,</span> <span class="p">[</span>
+            <span class="s1">&#39;titre&#39;</span>    <span class="o">=&gt;</span> <span class="s1">&#39;Modifier la commande&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;commande&#39;</span> <span class="o">=&gt;</span> <span class="nv">$commande</span><span class="p">,</span>
+        <span class="p">]);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// POST — enregistrement modification</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">mettreAJour</span><span class="p">(</span><span class="nx">int</span> <span class="nv">$identifiant</span><span class="p">)</span><span class="o">:</span> <span class="nx">void</span> <span class="p">{</span>
+        <span class="nx">Auth</span><span class="o">::</span><span class="na">verifierDroit</span><span class="p">(</span><span class="s1">&#39;APPRO_MODIFIER&#39;</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">verifierMethode</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">);</span>
+        <span class="nv">$donnees</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">nettoyerPost</span><span class="p">([</span><span class="s1">&#39;fournisseur_id&#39;</span><span class="p">,</span> <span class="s1">&#39;date_commande&#39;</span><span class="p">,</span> <span class="s1">&#39;notes&#39;</span><span class="p">]);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">service</span><span class="o">-&gt;</span><span class="na">mettreAJourCommande</span><span class="p">(</span><span class="nv">$identifiant</span><span class="p">,</span> <span class="nv">$donnees</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">redirigerVers</span><span class="p">(</span><span class="s1">&#39;/approvisionnements/commandes&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// POST — suppression</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">supprimer</span><span class="p">(</span><span class="nx">int</span> <span class="nv">$identifiant</span><span class="p">)</span><span class="o">:</span> <span class="nx">void</span> <span class="p">{</span>
+        <span class="nx">Auth</span><span class="o">::</span><span class="na">verifierDroit</span><span class="p">(</span><span class="s1">&#39;APPRO_SUPPRIMER&#39;</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">verifierMethode</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">modele</span><span class="o">-&gt;</span><span class="na">supprimer</span><span class="p">(</span><span class="nv">$identifiant</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">redirigerVers</span><span class="p">(</span><span class="s1">&#39;/approvisionnements/commandes&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// GET — génération PDF</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">imprimerPdf</span><span class="p">(</span><span class="nx">int</span> <span class="nv">$identifiant</span><span class="p">)</span><span class="o">:</span> <span class="nx">void</span> <span class="p">{</span>
+        <span class="nx">Auth</span><span class="o">::</span><span class="na">verifierDroit</span><span class="p">(</span><span class="s1">&#39;APPRO_LIRE&#39;</span><span class="p">);</span>
+        <span class="k">require_once</span> <span class="nx">ROOT</span> <span class="o">.</span> <span class="s1">&#39;/modules/approvisionnements/pdf/BonCommandePDF.php&#39;</span><span class="p">;</span>
+        <span class="nv">$commande</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">modele</span><span class="o">-&gt;</span><span class="na">trouverComplet</span><span class="p">(</span><span class="nv">$identifiant</span><span class="p">);</span>
+        <span class="nv">$pdf</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">BonCommandePDF</span><span class="p">(</span><span class="nv">$commande</span><span class="p">);</span>
+        <span class="nv">$pdf</span><span class="o">-&gt;</span><span class="na">generer</span><span class="p">();</span> <span class="c1">// envoie le PDF au navigateur</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+</div>
+
+<h3 id="33-structure-dun-model">3.3 Structure d'un Model</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="cp">&lt;?php</span>
+<span class="c1">// modules/approvisionnements/models/CommandeFournisseur.php</span>
+
+<span class="k">require_once</span> <span class="nx">ROOT</span> <span class="o">.</span> <span class="s1">&#39;/core/Model.php&#39;</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">CommandeFournisseur</span> <span class="k">extends</span> <span class="nx">Model</span> <span class="p">{</span>
+
+    <span class="k">protected</span> <span class="nx">string</span> <span class="nv">$table</span> <span class="o">=</span> <span class="s1">&#39;bons_commande_fournisseur&#39;</span><span class="p">;</span>
+
+    <span class="c1">// Récupérer toutes les commandes avec le nom du fournisseur</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">listerTout</span><span class="p">()</span><span class="o">:</span> <span class="k">array</span> <span class="p">{</span>
+        <span class="nv">$sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT bcf.*, f.raison_sociale AS fournisseur_nom</span>
+<span class="s2">                FROM bons_commande_fournisseur bcf</span>
+<span class="s2">                JOIN fournisseurs f ON f.id = bcf.fournisseur_id</span>
+<span class="s2">                ORDER BY bcf.date_commande DESC&quot;</span><span class="p">;</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">bd</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">requete</span><span class="p">(</span><span class="nv">$sql</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">toutRecuperer</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Récupérer une commande avec ses lignes</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">trouverComplet</span><span class="p">(</span><span class="nx">int</span> <span class="nv">$identifiant</span><span class="p">)</span><span class="o">:</span> <span class="k">array</span> <span class="p">{</span>
+        <span class="nv">$sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT bcf.*, f.raison_sociale AS fournisseur_nom</span>
+<span class="s2">                FROM bons_commande_fournisseur bcf</span>
+<span class="s2">                JOIN fournisseurs f ON f.id = bcf.fournisseur_id</span>
+<span class="s2">                WHERE bcf.id = :id&quot;</span><span class="p">;</span>
+        <span class="nv">$commande</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">bd</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">requete</span><span class="p">(</span><span class="nv">$sql</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;:id&#39;</span> <span class="o">=&gt;</span> <span class="nv">$identifiant</span><span class="p">])</span><span class="o">-&gt;</span><span class="na">unRecuperer</span><span class="p">();</span>
+
+        <span class="nv">$sqlLignes</span> <span class="o">=</span> <span class="s2">&quot;SELECT lcf.*, p.designation, p.unite</span>
+<span class="s2">                      FROM lignes_commande_fournisseur lcf</span>
+<span class="s2">                      JOIN produits p ON p.id = lcf.produit_id</span>
+<span class="s2">                      WHERE lcf.bon_commande_id = :id&quot;</span><span class="p">;</span>
+        <span class="nv">$commande</span><span class="p">[</span><span class="s1">&#39;lignes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">bd</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">requete</span><span class="p">(</span><span class="nv">$sqlLignes</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;:id&#39;</span> <span class="o">=&gt;</span> <span class="nv">$identifiant</span><span class="p">])</span><span class="o">-&gt;</span><span class="na">toutRecuperer</span><span class="p">();</span>
+
+        <span class="k">return</span> <span class="nv">$commande</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Créer une commande — retourne l&#39;ID inséré</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">creer</span><span class="p">(</span><span class="k">array</span> <span class="nv">$donnees</span><span class="p">)</span><span class="o">:</span> <span class="nx">int</span> <span class="p">{</span>
+        <span class="nv">$sql</span> <span class="o">=</span> <span class="s2">&quot;INSERT INTO bons_commande_fournisseur</span>
+<span class="s2">                    (numero, fournisseur_id, date_commande, statut, notes, utilisateur_id)</span>
+<span class="s2">                VALUES</span>
+<span class="s2">                    (:numero, :fournisseur_id, :date_commande, &#39;BROUILLON&#39;, :notes, :utilisateur_id)</span>
+<span class="s2">                RETURNING id&quot;</span><span class="p">;</span>
+        <span class="nv">$resultat</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">bd</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">requete</span><span class="p">(</span><span class="nv">$sql</span><span class="p">,</span> <span class="nv">$donnees</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">unRecuperer</span><span class="p">();</span>
+        <span class="k">return</span> <span class="p">(</span><span class="nx">int</span><span class="p">)</span> <span class="nv">$resultat</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">];</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Supprimer (ON DELETE CASCADE gère les lignes enfants)</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">supprimer</span><span class="p">(</span><span class="nx">int</span> <span class="nv">$identifiant</span><span class="p">)</span><span class="o">:</span> <span class="nx">void</span> <span class="p">{</span>
+        <span class="nv">$sql</span> <span class="o">=</span> <span class="s2">&quot;DELETE FROM bons_commande_fournisseur WHERE id = :id&quot;</span><span class="p">;</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">bd</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">requete</span><span class="p">(</span><span class="nv">$sql</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;:id&#39;</span> <span class="o">=&gt;</span> <span class="nv">$identifiant</span><span class="p">]);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+</div>
+
+<h3 id="34-structure-dun-service">3.4 Structure d'un Service</h3>
+
+<p>Les services contiennent <strong>toute la logique métier</strong>. Ni les controllers ni les models n'effectuent de calculs.</p>
+
+<div class="codehilite">
+<pre><span></span><code><span class="cp">&lt;?php</span>
+<span class="c1">// modules/approvisionnements/services/CommandeService.php</span>
+
+<span class="k">require_once</span> <span class="nx">ROOT</span> <span class="o">.</span> <span class="s1">&#39;/modules/approvisionnements/models/CommandeFournisseur.php&#39;</span><span class="p">;</span>
+<span class="k">require_once</span> <span class="nx">ROOT</span> <span class="o">.</span> <span class="s1">&#39;/modules/approvisionnements/models/LigneCommandeFournisseur.php&#39;</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">CommandeService</span> <span class="p">{</span>
+
+    <span class="k">private</span> <span class="nx">CommandeFournisseur</span> <span class="nv">$modeleCommande</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="fm">__construct</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">modeleCommande</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">CommandeFournisseur</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">creerCommande</span><span class="p">(</span><span class="k">array</span> <span class="nv">$donnees</span><span class="p">)</span><span class="o">:</span> <span class="nx">int</span> <span class="p">{</span>
+        <span class="c1">// Générer le numéro automatiquement</span>
+        <span class="nv">$donnees</span><span class="p">[</span><span class="s1">&#39;numero&#39;</span><span class="p">]</span>        <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">genererNumero</span><span class="p">(</span><span class="s1">&#39;BCF&#39;</span><span class="p">);</span>
+        <span class="nv">$donnees</span><span class="p">[</span><span class="s1">&#39;utilisateur_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">&#39;utilisateur_id&#39;</span><span class="p">];</span>
+
+        <span class="nv">$identifiant</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">modeleCommande</span><span class="o">-&gt;</span><span class="na">creer</span><span class="p">(</span><span class="nv">$donnees</span><span class="p">);</span>
+
+        <span class="c1">// Enregistrer les lignes si présentes</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">empty</span><span class="p">(</span><span class="nv">$donnees</span><span class="p">[</span><span class="s1">&#39;lignes&#39;</span><span class="p">]))</span> <span class="p">{</span>
+            <span class="nv">$modeleLigne</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">LigneCommandeFournisseur</span><span class="p">();</span>
+            <span class="k">foreach</span> <span class="p">(</span><span class="nv">$donnees</span><span class="p">[</span><span class="s1">&#39;lignes&#39;</span><span class="p">]</span> <span class="k">as</span> <span class="nv">$ligne</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nv">$ligne</span><span class="p">[</span><span class="s1">&#39;bon_commande_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$identifiant</span><span class="p">;</span>
+                <span class="nv">$modeleLigne</span><span class="o">-&gt;</span><span class="na">creer</span><span class="p">(</span><span class="nv">$ligne</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="nv">$identifiant</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">private</span> <span class="k">function</span> <span class="nf">genererNumero</span><span class="p">(</span><span class="nx">string</span> <span class="nv">$prefixe</span><span class="p">)</span><span class="o">:</span> <span class="nx">string</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$prefixe</span> <span class="o">.</span> <span class="s1">&#39;-&#39;</span> <span class="o">.</span> <span class="nb">date</span><span class="p">(</span><span class="s1">&#39;Ymd&#39;</span><span class="p">)</span> <span class="o">.</span> <span class="s1">&#39;-&#39;</span> <span class="o">.</span> <span class="nb">strtoupper</span><span class="p">(</span><span class="nb">substr</span><span class="p">(</span><span class="nb">uniqid</span><span class="p">(),</span> <span class="o">-</span><span class="mi">4</span><span class="p">));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+</div>
+
+<hr />
+
+<h2 id="4-conventions-de-code-php">4. CONVENTIONS DE CODE PHP</h2>
+
+<h3 id="41-regles-fondamentales">4.1 Règles fondamentales</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="cp">&lt;?php</span>
+<span class="c1">// ✅ CORRECT — une classe par fichier, nom identique au fichier</span>
+<span class="k">class</span> <span class="nc">CommandeFournisseur</span> <span class="k">extends</span> <span class="nx">Model</span> <span class="p">{</span> <span class="o">...</span> <span class="p">}</span>
+
+<span class="c1">// ✅ CORRECT — nommage en français, camelCase pour méthodes et variables</span>
+<span class="nv">$nombreLignes</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="k">function</span> <span class="nf">calculerTotalTTC</span><span class="p">(</span><span class="k">array</span> <span class="nv">$lignes</span><span class="p">)</span><span class="o">:</span> <span class="nx">float</span> <span class="p">{</span> <span class="o">...</span> <span class="p">}</span>
+
+<span class="c1">// ✅ CORRECT — constantes en MAJUSCULES_AVEC_TIRET_BAS</span>
+<span class="nb">define</span><span class="p">(</span><span class="s1">&#39;TAUX_TVA_DEFAUT&#39;</span><span class="p">,</span> <span class="mf">19.25</span><span class="p">);</span>
+
+<span class="c1">// ✅ CORRECT — commentaire de bloc pour chaque méthode publique</span>
+<span class="sd">/**</span>
+<span class="sd"> * Calcule le montant TTC d&#39;une ligne à partir du HT et de la TVA.</span>
+<span class="sd"> *</span>
+<span class="sd"> * @param float $montantHT   Montant hors taxe</span>
+<span class="sd"> * @param float $tauxTVA     Taux de TVA en pourcentage (ex: 19.25)</span>
+<span class="sd"> * @return float             Montant toutes taxes comprises</span>
+<span class="sd"> */</span>
+<span class="k">public</span> <span class="k">function</span> <span class="nf">calculerTTC</span><span class="p">(</span><span class="nx">float</span> <span class="nv">$montantHT</span><span class="p">,</span> <span class="nx">float</span> <span class="nv">$tauxTVA</span><span class="p">)</span><span class="o">:</span> <span class="nx">float</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nv">$montantHT</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="nv">$tauxTVA</span> <span class="o">/</span> <span class="mi">100</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre>
+</div>
+
+<h3 id="42-regles-de-securite-obligatoires">4.2 Règles de sécurité obligatoires</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="x">// ✅ TOUJOURS utiliser des requêtes préparées — JAMAIS d&#39;interpolation SQL</span>
+<span class="x">// CORRECT</span>
+<span class="x">$sql = &quot;SELECT * FROM produits WHERE id = :id AND actif = true&quot;;</span>
+<span class="x">$this-&gt;bd()-&gt;requete($sql, [&#39;:id&#39; =&gt; $identifiant]);</span>
+
+<span class="x">// ⛔ INTERDIT — injection SQL possible</span>
+<span class="x">$sql = &quot;SELECT * FROM produits WHERE id = &quot; . $identifiant;</span>
+
+<span class="x">// ✅ TOUJOURS échapper les sorties HTML</span>
+<span class="x">echo htmlspecialchars($produit[&#39;designation&#39;], ENT_QUOTES, &#39;UTF-8&#39;);</span>
+
+<span class="x">// ✅ TOUJOURS valider et nettoyer les données POST avant traitement</span>
+<span class="x">$identifiant = filter_input(INPUT_POST, &#39;id&#39;, FILTER_VALIDATE_INT);</span>
+<span class="x">if ($identifiant === false || $identifiant === null) {</span>
+<span class="x">    // erreur — identifiant invalide</span>
+<span class="x">}</span>
+
+<span class="x">// ✅ TOUJOURS vérifier la méthode HTTP dans les actions d&#39;écriture</span>
+<span class="x">if ($_SERVER[&#39;REQUEST_METHOD&#39;] !== &#39;POST&#39;) {</span>
+<span class="x">    http_response_code(405);</span>
+<span class="x">    exit(&#39;Méthode non autorisée&#39;);</span>
+<span class="x">}</span>
+</code></pre>
+</div>
+
+<h3 id="43-interdictions-formelles">4.3 Interdictions formelles</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="x">// ⛔ INTERDIT — requête SQL dans une vue</span>
+<span class="x">// fichier : views/commande_liste.php</span>
+<span class="x">$resultat = pg_query(&quot;SELECT * FROM ...&quot;);  // NON</span>
+
+<span class="x">// ⛔ INTERDIT — logique métier dans un controller</span>
+<span class="x">public function enregistrer(): void {</span>
+<span class="x">    $total = 0;</span>
+<span class="x">    foreach ($lignes as $ligne) {            // NON — ça appartient au Service</span>
+<span class="x">        $total += $ligne[&#39;prix&#39;] * $ligne[&#39;quantite&#39;];</span>
+<span class="x">    }</span>
+<span class="x">}</span>
+
+<span class="x">// ⛔ INTERDIT — accès direct à $_POST dans un model</span>
+<span class="x">public function creer(): void {</span>
+<span class="x">    $nom = $_POST[&#39;nom&#39;];  // NON — les données arrivent en paramètre</span>
+<span class="x">}</span>
+
+<span class="x">// ⛔ INTERDIT — echo ou print dans un model ou service</span>
+<span class="x">public function listerTout(): array {</span>
+<span class="x">    echo &quot;chargement...&quot;;  // NON</span>
+<span class="x">}</span>
+
+<span class="x">// ⛔ INTERDIT — var_dump ou print_r laissé dans le code commité</span>
+<span class="x">var_dump($resultat);  // NON — utiliser uniquement en développement local, jamais commiter</span>
+</code></pre>
+</div>
+
+<h3 id="44-gestion-des-erreurs">4.4 Gestion des erreurs</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="x">// ✅ CORRECT — toujours vérifier le retour des opérations critiques</span>
+<span class="x">public function trouverParId(int $identifiant): array {</span>
+<span class="x">    $resultat = $this-&gt;bd()-&gt;requete($sql, [&#39;:id&#39; =&gt; $identifiant])-&gt;unRecuperer();</span>
+<span class="x">    if (!$resultat) {</span>
+<span class="x">        throw new RuntimeException(&quot;Enregistrement introuvable : id = {$identifiant}&quot;);</span>
+<span class="x">    }</span>
+<span class="x">    return $resultat;</span>
+<span class="x">}</span>
+
+<span class="x">// ✅ CORRECT — attraper les exceptions dans le controller</span>
+<span class="x">public function editer(int $identifiant): void {</span>
+<span class="x">    try {</span>
+<span class="x">        $commande = $this-&gt;modele-&gt;trouverParId($identifiant);</span>
+<span class="x">        $this-&gt;rendrePage(...);</span>
+<span class="x">    } catch (RuntimeException $erreur) {</span>
+<span class="x">        $this-&gt;rendrePage(&#39;erreurs&#39;, &#39;404&#39;, [&#39;message&#39; =&gt; $erreur-&gt;getMessage()]);</span>
+<span class="x">    }</span>
+<span class="x">}</span>
+</code></pre>
+</div>
+
+<hr />
+
+<h2 id="5-systeme-de-layout-sidebar-header-content">5. SYSTÈME DE LAYOUT — SIDEBAR / HEADER / CONTENT</h2>
+
+<h3 id="51-fonctionnement-general">5.1 Fonctionnement général</h3>
+
+<p>Toutes les pages du système utilisent <strong>un seul layout central</strong> (<code>views/layouts/base.php</code>). Chaque vue de module s'insère dans la zone <code>content</code> grâce à <code>ob_start()</code> / <code>ob_get_clean()</code>.</p>
+
+<pre><code>┌─────────────────────────────────────────────────────────┐
+│                        base.php                         │
+│  ┌──────────┬────────────────────────────────────────┐  │
+│  │          │           header.php                   │  │
+│  │          ├────────────────────────────────────────┤  │
+│  │ sidebar  │                                        │  │
+│  │  .php    │         $contenuPage                   │  │
+│  │ (h-full) │     ← ob_start() dans chaque vue       │  │
+│  │          │                                        │  │
+│  └──────────┴────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+
+<h3 id="52-fichier-viewslayoutsbasephp">5.2 Fichier <code>views/layouts/base.php</code></h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="cp">&lt;?php</span>
+<span class="c1">// views/layouts/base.php</span>
+<span class="c1">// Reçoit : $titrePage, $moduleActif, $contenuPage</span>
+<span class="cp">?&gt;</span>
+<span class="x">&lt;!DOCTYPE html&gt;</span>
+<span class="x">&lt;html lang=&quot;fr&quot;&gt;</span>
+<span class="x">&lt;head&gt;</span>
+<span class="x">    &lt;meta charset=&quot;UTF-8&quot;&gt;</span>
+<span class="x">    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;</span>
+<span class="x">    &lt;title&gt;</span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="nv">$titrePage</span> <span class="o">??</span> <span class="s1">&#39;Système de gestion&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span><span class="x"> — SGestion&lt;/title&gt;</span>
+<span class="x">    &lt;link rel=&quot;stylesheet&quot; href=&quot;</span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nx">BASE_URL</span> <span class="cp">?&gt;</span><span class="x">/assets/css/app.css&quot;&gt;</span>
+<span class="x">    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css&quot;&gt;</span>
+<span class="x">&lt;/head&gt;</span>
+<span class="x">&lt;body class=&quot;flex h-screen bg-gray-100 font-sans overflow-hidden&quot;&gt;</span>
+
+<span class="x">    &lt;!-- SIDEBAR --&gt;</span>
+<span class="x">    </span><span class="cp">&lt;?php</span> <span class="k">require_once</span> <span class="nx">ROOT</span> <span class="o">.</span> <span class="s1">&#39;/views/layouts/sidebar.php&#39;</span><span class="p">;</span> <span class="cp">?&gt;</span>
+
+<span class="x">    &lt;!-- ZONE PRINCIPALE --&gt;</span>
+<span class="x">    &lt;div class=&quot;flex flex-col flex-1 min-w-0 overflow-hidden&quot;&gt;</span>
+
+<span class="x">        &lt;!-- HEADER --&gt;</span>
+<span class="x">        </span><span class="cp">&lt;?php</span> <span class="k">require_once</span> <span class="nx">ROOT</span> <span class="o">.</span> <span class="s1">&#39;/views/layouts/header.php&#39;</span><span class="p">;</span> <span class="cp">?&gt;</span>
+
+<span class="x">        &lt;!-- CONTENU DE LA PAGE --&gt;</span>
+<span class="x">        &lt;main class=&quot;flex-1 overflow-y-auto p-6&quot;&gt;</span>
+<span class="x">            </span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nv">$contenuPage</span> <span class="cp">?&gt;</span>
+<span class="x">        &lt;/main&gt;</span>
+
+<span class="x">    &lt;/div&gt;</span>
+
+<span class="x">&lt;/body&gt;</span>
+<span class="x">&lt;/html&gt;</span>
+</code></pre>
+</div>
+
+<h3 id="53-fichier-viewslayoutssidebarphp">5.3 Fichier <code>views/layouts/sidebar.php</code></h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="cp">&lt;?php</span>
+<span class="c1">// views/layouts/sidebar.php</span>
+<span class="c1">// Reçoit : $moduleActif (ex: &#39;approvisionnements&#39;, &#39;ventes&#39;, &#39;structure&#39;, &#39;utilisateurs&#39;)</span>
+
+<span class="nv">$menuItems</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span>
+        <span class="s1">&#39;module&#39;</span>  <span class="o">=&gt;</span> <span class="s1">&#39;tableau-de-bord&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;libelle&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Tableau de bord&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;icone&#39;</span>   <span class="o">=&gt;</span> <span class="s1">&#39;fa-solid fa-gauge&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;lien&#39;</span>    <span class="o">=&gt;</span> <span class="nx">BASE_URL</span> <span class="o">.</span> <span class="s1">&#39;/tableau-de-bord&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;droit&#39;</span>   <span class="o">=&gt;</span> <span class="k">null</span><span class="p">,</span> <span class="c1">// accessible à tous les connectés</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">&#39;module&#39;</span>  <span class="o">=&gt;</span> <span class="s1">&#39;approvisionnements&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;libelle&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Approvisionnements&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;icone&#39;</span>   <span class="o">=&gt;</span> <span class="s1">&#39;fa-solid fa-boxes-stacked&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;lien&#39;</span>    <span class="o">=&gt;</span> <span class="nx">BASE_URL</span> <span class="o">.</span> <span class="s1">&#39;/approvisionnements&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;droit&#39;</span>   <span class="o">=&gt;</span> <span class="s1">&#39;APPRO_LIRE&#39;</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">&#39;module&#39;</span>  <span class="o">=&gt;</span> <span class="s1">&#39;ventes&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;libelle&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Ventes&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;icone&#39;</span>   <span class="o">=&gt;</span> <span class="s1">&#39;fa-solid fa-cart-shopping&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;lien&#39;</span>    <span class="o">=&gt;</span> <span class="nx">BASE_URL</span> <span class="o">.</span> <span class="s1">&#39;/ventes&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;droit&#39;</span>   <span class="o">=&gt;</span> <span class="s1">&#39;VENTE_LIRE&#39;</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">&#39;module&#39;</span>  <span class="o">=&gt;</span> <span class="s1">&#39;structure&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;libelle&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Structure&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;icone&#39;</span>   <span class="o">=&gt;</span> <span class="s1">&#39;fa-solid fa-layer-group&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;lien&#39;</span>    <span class="o">=&gt;</span> <span class="nx">BASE_URL</span> <span class="o">.</span> <span class="s1">&#39;/structure&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;droit&#39;</span>   <span class="o">=&gt;</span> <span class="s1">&#39;STRUCTURE_LIRE&#39;</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="p">[</span>
+        <span class="s1">&#39;module&#39;</span>  <span class="o">=&gt;</span> <span class="s1">&#39;utilisateurs&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;libelle&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Utilisateurs&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;icone&#39;</span>   <span class="o">=&gt;</span> <span class="s1">&#39;fa-solid fa-users&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;lien&#39;</span>    <span class="o">=&gt;</span> <span class="nx">BASE_URL</span> <span class="o">.</span> <span class="s1">&#39;/utilisateurs&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;droit&#39;</span>   <span class="o">=&gt;</span> <span class="s1">&#39;USERS_LIRE&#39;</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">];</span>
+<span class="cp">?&gt;</span>
+<span class="x">&lt;aside class=&quot;w-64 bg-gray-900 text-white flex flex-col h-screen flex-shrink-0&quot;&gt;</span>
+
+<span class="x">    &lt;!-- Logo --&gt;</span>
+<span class="x">    &lt;div class=&quot;px-6 py-5 border-b border-gray-700&quot;&gt;</span>
+<span class="x">        &lt;span class=&quot;text-lg font-semibold tracking-wide&quot;&gt;SGestion&lt;/span&gt;</span>
+<span class="x">    &lt;/div&gt;</span>
+
+<span class="x">    &lt;!-- Navigation --&gt;</span>
+<span class="x">    &lt;nav class=&quot;flex-1 overflow-y-auto px-3 py-4 space-y-1&quot;&gt;</span>
+<span class="x">        </span><span class="cp">&lt;?php</span> <span class="k">foreach</span> <span class="p">(</span><span class="nv">$menuItems</span> <span class="k">as</span> <span class="nv">$item</span><span class="p">)</span><span class="o">:</span> <span class="cp">?&gt;</span>
+<span class="x">            </span><span class="cp">&lt;?php</span> <span class="k">if</span> <span class="p">(</span><span class="nv">$item</span><span class="p">[</span><span class="s1">&#39;droit&#39;</span><span class="p">]</span> <span class="o">===</span> <span class="k">null</span> <span class="o">||</span> <span class="nx">Auth</span><span class="o">::</span><span class="na">peut</span><span class="p">(</span><span class="nv">$item</span><span class="p">[</span><span class="s1">&#39;droit&#39;</span><span class="p">]))</span><span class="o">:</span> <span class="cp">?&gt;</span>
+<span class="x">                &lt;a href=&quot;</span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nv">$item</span><span class="p">[</span><span class="s1">&#39;lien&#39;</span><span class="p">]</span> <span class="cp">?&gt;</span><span class="x">&quot;</span>
+<span class="x">                   class=&quot;flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors</span>
+<span class="x">                          </span><span class="cp">&lt;?</span><span class="o">=</span> <span class="p">(</span><span class="nv">$moduleActif</span> <span class="o">??</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">===</span> <span class="nv">$item</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">]</span>
+                              <span class="o">?</span> <span class="s1">&#39;bg-blue-600 text-white font-medium&#39;</span>
+                              <span class="o">:</span> <span class="s1">&#39;text-gray-300 hover:bg-gray-700 hover:text-white&#39;</span> <span class="cp">?&gt;</span><span class="x">&quot;&gt;</span>
+<span class="x">                    &lt;i class=&quot;</span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nv">$item</span><span class="p">[</span><span class="s1">&#39;icone&#39;</span><span class="p">]</span> <span class="cp">?&gt;</span><span class="x"> w-5 text-center&quot;&gt;&lt;/i&gt;</span>
+<span class="x">                    </span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="nv">$item</span><span class="p">[</span><span class="s1">&#39;libelle&#39;</span><span class="p">])</span> <span class="cp">?&gt;</span>
+<span class="x">                &lt;/a&gt;</span>
+<span class="x">            </span><span class="cp">&lt;?php</span> <span class="k">endif</span><span class="p">;</span> <span class="cp">?&gt;</span>
+<span class="x">        </span><span class="cp">&lt;?php</span> <span class="k">endforeach</span><span class="p">;</span> <span class="cp">?&gt;</span>
+<span class="x">    &lt;/nav&gt;</span>
+
+<span class="x">    &lt;!-- Utilisateur connecté --&gt;</span>
+<span class="x">    &lt;div class=&quot;px-4 py-4 border-t border-gray-700&quot;&gt;</span>
+<span class="x">        &lt;p class=&quot;text-xs text-gray-400 mb-1&quot;&gt;Connecté en tant que&lt;/p&gt;</span>
+<span class="x">        &lt;p class=&quot;text-sm font-medium text-white truncate&quot;&gt;</span>
+<span class="x">            </span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="nx">Auth</span><span class="o">::</span><span class="na">utilisateurCourant</span><span class="p">()[</span><span class="s1">&#39;nom&#39;</span><span class="p">]</span> <span class="o">??</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span>
+<span class="x">        &lt;/p&gt;</span>
+<span class="x">        &lt;a href=&quot;</span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nx">BASE_URL</span> <span class="cp">?&gt;</span><span class="x">/deconnexion&quot;</span>
+<span class="x">           class=&quot;mt-2 flex items-center gap-2 text-xs text-gray-400 hover:text-red-400 transition-colors&quot;&gt;</span>
+<span class="x">            &lt;i class=&quot;fa-solid fa-right-from-bracket&quot;&gt;&lt;/i&gt; Déconnexion</span>
+<span class="x">        &lt;/a&gt;</span>
+<span class="x">    &lt;/div&gt;</span>
+
+<span class="x">&lt;/aside&gt;</span>
+</code></pre>
+</div>
+
+<h3 id="54-fichier-viewslayoutsheaderphp">5.4 Fichier <code>views/layouts/header.php</code></h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="cp">&lt;?php</span>
+<span class="c1">// views/layouts/header.php</span>
+<span class="c1">// Reçoit : $titrePage</span>
+<span class="cp">?&gt;</span>
+<span class="x">&lt;header class=&quot;bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0&quot;&gt;</span>
+
+<span class="x">    &lt;h1 class=&quot;text-xl font-semibold text-gray-800&quot;&gt;</span>
+<span class="x">        </span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="nv">$titrePage</span> <span class="o">??</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span>
+<span class="x">    &lt;/h1&gt;</span>
+
+<span class="x">    &lt;div class=&quot;flex items-center gap-4 text-sm text-gray-500&quot;&gt;</span>
+<span class="x">        &lt;span&gt;&lt;i class=&quot;fa-regular fa-calendar mr-1&quot;&gt;&lt;/i&gt;</span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nb">date</span><span class="p">(</span><span class="s1">&#39;d/m/Y&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span><span class="x">&lt;/span&gt;</span>
+<span class="x">        &lt;span class=&quot;bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium&quot;&gt;</span>
+<span class="x">            </span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="nx">Auth</span><span class="o">::</span><span class="na">utilisateurCourant</span><span class="p">()[</span><span class="s1">&#39;groupe_nom&#39;</span><span class="p">]</span> <span class="o">??</span> <span class="s1">&#39;Non défini&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span>
+<span class="x">        &lt;/span&gt;</span>
+<span class="x">    &lt;/div&gt;</span>
+
+<span class="x">&lt;/header&gt;</span>
+</code></pre>
+</div>
+
+<h3 id="55-methode-rendrepage-dans-corecontrollerphp">5.5 Méthode <code>rendrePage()</code> dans <code>core/Controller.php</code></h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="cp">&lt;?php</span>
+<span class="c1">// core/Controller.php</span>
+
+<span class="k">class</span> <span class="nc">Controller</span> <span class="p">{</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * Rend une vue dans le layout principal.</span>
+<span class="sd">     *</span>
+<span class="sd">     * @param string $module     Nom du module (ex: &#39;approvisionnements&#39;)</span>
+<span class="sd">     * @param string $vue        Nom du fichier vue sans .php (ex: &#39;commande_liste&#39;)</span>
+<span class="sd">     * @param array  $donnees    Variables passées à la vue et au layout</span>
+<span class="sd">     */</span>
+    <span class="k">protected</span> <span class="k">function</span> <span class="nf">rendrePage</span><span class="p">(</span><span class="nx">string</span> <span class="nv">$module</span><span class="p">,</span> <span class="nx">string</span> <span class="nv">$vue</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$donnees</span> <span class="o">=</span> <span class="p">[])</span><span class="o">:</span> <span class="nx">void</span> <span class="p">{</span>
+        <span class="c1">// Rendre les variables disponibles dans la vue</span>
+        <span class="nb">extract</span><span class="p">(</span><span class="nv">$donnees</span><span class="p">);</span>
+
+        <span class="c1">// Capturer le contenu de la vue avec ob_start</span>
+        <span class="nb">ob_start</span><span class="p">();</span>
+        <span class="nv">$cheminVue</span> <span class="o">=</span> <span class="nx">ROOT</span> <span class="o">.</span> <span class="s2">&quot;/modules/</span><span class="si">{</span><span class="nv">$module</span><span class="si">}</span><span class="s2">/views/</span><span class="si">{</span><span class="nv">$vue</span><span class="si">}</span><span class="s2">.php&quot;</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nb">file_exists</span><span class="p">(</span><span class="nv">$cheminVue</span><span class="p">))</span> <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">RuntimeException</span><span class="p">(</span><span class="s2">&quot;Vue introuvable : </span><span class="si">{</span><span class="nv">$cheminVue</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">require</span> <span class="nv">$cheminVue</span><span class="p">;</span>
+        <span class="nv">$contenuPage</span> <span class="o">=</span> <span class="nb">ob_get_clean</span><span class="p">();</span>
+
+        <span class="c1">// Injecter dans le layout principal</span>
+        <span class="k">require</span> <span class="nx">ROOT</span> <span class="o">.</span> <span class="s1">&#39;/views/layouts/base.php&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">protected</span> <span class="k">function</span> <span class="nf">redirigerVers</span><span class="p">(</span><span class="nx">string</span> <span class="nv">$chemin</span><span class="p">)</span><span class="o">:</span> <span class="nx">void</span> <span class="p">{</span>
+        <span class="nb">header</span><span class="p">(</span><span class="s1">&#39;Location: &#39;</span> <span class="o">.</span> <span class="nx">BASE_URL</span> <span class="o">.</span> <span class="nv">$chemin</span><span class="p">);</span>
+        <span class="k">exit</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">protected</span> <span class="k">function</span> <span class="nf">verifierMethode</span><span class="p">(</span><span class="nx">string</span> <span class="nv">$methode</span><span class="p">)</span><span class="o">:</span> <span class="nx">void</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$_SERVER</span><span class="p">[</span><span class="s1">&#39;REQUEST_METHOD&#39;</span><span class="p">]</span> <span class="o">!==</span> <span class="nb">strtoupper</span><span class="p">(</span><span class="nv">$methode</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nb">http_response_code</span><span class="p">(</span><span class="mi">405</span><span class="p">);</span>
+            <span class="k">exit</span><span class="p">(</span><span class="s1">&#39;Méthode non autorisée&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">protected</span> <span class="k">function</span> <span class="nf">nettoyerPost</span><span class="p">(</span><span class="k">array</span> <span class="nv">$champs</span><span class="p">)</span><span class="o">:</span> <span class="k">array</span> <span class="p">{</span>
+        <span class="nv">$donnees</span> <span class="o">=</span> <span class="p">[];</span>
+        <span class="k">foreach</span> <span class="p">(</span><span class="nv">$champs</span> <span class="k">as</span> <span class="nv">$champ</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nv">$donnees</span><span class="p">[</span><span class="nv">$champ</span><span class="p">]</span> <span class="o">=</span> <span class="nb">isset</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="nv">$champ</span><span class="p">])</span>
+                <span class="o">?</span> <span class="nb">trim</span><span class="p">(</span><span class="nb">htmlspecialchars</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="nv">$champ</span><span class="p">],</span> <span class="nx">ENT_QUOTES</span><span class="p">,</span> <span class="s1">&#39;UTF-8&#39;</span><span class="p">))</span>
+                <span class="o">:</span> <span class="k">null</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="nv">$donnees</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+</div>
+
+<h3 id="56-structure-dune-vue-de-module">5.6 Structure d'une vue de module</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="cp">&lt;?php</span>
+<span class="c1">// modules/approvisionnements/views/commande_liste.php</span>
+<span class="c1">// Variables disponibles : $commandes, $titrePage (injectées par rendrePage)</span>
+<span class="c1">// NE PAS inclure de balises &lt;html&gt;, &lt;head&gt;, &lt;body&gt; ici</span>
+<span class="c1">// NE PAS appeler ob_start() manuellement — c&#39;est fait par rendrePage()</span>
+<span class="cp">?&gt;</span>
+
+<span class="x">&lt;div class=&quot;space-y-4&quot;&gt;</span>
+
+<span class="x">    &lt;!-- Barre d&#39;actions --&gt;</span>
+<span class="x">    &lt;div class=&quot;flex justify-between items-center&quot;&gt;</span>
+<span class="x">        &lt;p class=&quot;text-sm text-gray-500&quot;&gt;</span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nb">count</span><span class="p">(</span><span class="nv">$commandes</span><span class="p">)</span> <span class="cp">?&gt;</span><span class="x"> commande(s) trouvée(s)&lt;/p&gt;</span>
+<span class="x">        </span><span class="cp">&lt;?php</span> <span class="k">if</span> <span class="p">(</span><span class="nx">Auth</span><span class="o">::</span><span class="na">peut</span><span class="p">(</span><span class="s1">&#39;APPRO_CREER&#39;</span><span class="p">))</span><span class="o">:</span> <span class="cp">?&gt;</span>
+<span class="x">            &lt;a href=&quot;</span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nx">BASE_URL</span> <span class="cp">?&gt;</span><span class="x">/approvisionnements/commandes/creer&quot;</span>
+<span class="x">               class=&quot;bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-md</span>
+<span class="x">                      flex items-center gap-2 transition-colors&quot;&gt;</span>
+<span class="x">                &lt;i class=&quot;fa-solid fa-plus&quot;&gt;&lt;/i&gt; Nouvelle commande</span>
+<span class="x">            &lt;/a&gt;</span>
+<span class="x">        </span><span class="cp">&lt;?php</span> <span class="k">endif</span><span class="p">;</span> <span class="cp">?&gt;</span>
+<span class="x">    &lt;/div&gt;</span>
+
+<span class="x">    &lt;!-- Tableau --&gt;</span>
+<span class="x">    &lt;div class=&quot;bg-white rounded-lg border border-gray-200 overflow-hidden&quot;&gt;</span>
+<span class="x">        &lt;table class=&quot;min-w-full text-sm&quot;&gt;</span>
+<span class="x">            &lt;thead class=&quot;bg-gray-50 border-b border-gray-200&quot;&gt;</span>
+<span class="x">                &lt;tr&gt;</span>
+<span class="x">                    &lt;th class=&quot;px-4 py-3 text-left font-medium text-gray-600&quot;&gt;Numéro&lt;/th&gt;</span>
+<span class="x">                    &lt;th class=&quot;px-4 py-3 text-left font-medium text-gray-600&quot;&gt;Fournisseur&lt;/th&gt;</span>
+<span class="x">                    &lt;th class=&quot;px-4 py-3 text-left font-medium text-gray-600&quot;&gt;Date&lt;/th&gt;</span>
+<span class="x">                    &lt;th class=&quot;px-4 py-3 text-left font-medium text-gray-600&quot;&gt;Statut&lt;/th&gt;</span>
+<span class="x">                    &lt;th class=&quot;px-4 py-3 text-right font-medium text-gray-600&quot;&gt;Actions&lt;/th&gt;</span>
+<span class="x">                &lt;/tr&gt;</span>
+<span class="x">            &lt;/thead&gt;</span>
+<span class="x">            &lt;tbody class=&quot;divide-y divide-gray-100&quot;&gt;</span>
+<span class="x">                </span><span class="cp">&lt;?php</span> <span class="k">foreach</span> <span class="p">(</span><span class="nv">$commandes</span> <span class="k">as</span> <span class="nv">$commande</span><span class="p">)</span><span class="o">:</span> <span class="cp">?&gt;</span>
+<span class="x">                    &lt;tr class=&quot;hover:bg-gray-50&quot;&gt;</span>
+<span class="x">                        &lt;td class=&quot;px-4 py-3 font-mono text-xs&quot;&gt;</span>
+<span class="x">                            </span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="nv">$commande</span><span class="p">[</span><span class="s1">&#39;numero&#39;</span><span class="p">])</span> <span class="cp">?&gt;</span>
+<span class="x">                        &lt;/td&gt;</span>
+<span class="x">                        &lt;td class=&quot;px-4 py-3&quot;&gt;</span>
+<span class="x">                            </span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="nv">$commande</span><span class="p">[</span><span class="s1">&#39;fournisseur_nom&#39;</span><span class="p">])</span> <span class="cp">?&gt;</span>
+<span class="x">                        &lt;/td&gt;</span>
+<span class="x">                        &lt;td class=&quot;px-4 py-3 text-gray-500&quot;&gt;</span>
+<span class="x">                            </span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nb">date</span><span class="p">(</span><span class="s1">&#39;d/m/Y&#39;</span><span class="p">,</span> <span class="nb">strtotime</span><span class="p">(</span><span class="nv">$commande</span><span class="p">[</span><span class="s1">&#39;date_commande&#39;</span><span class="p">]))</span> <span class="cp">?&gt;</span>
+<span class="x">                        &lt;/td&gt;</span>
+<span class="x">                        &lt;td class=&quot;px-4 py-3&quot;&gt;</span>
+<span class="x">                            &lt;span class=&quot;px-2 py-1 rounded-full text-xs font-medium</span>
+<span class="x">                                </span><span class="cp">&lt;?</span><span class="o">=</span> <span class="k">match</span><span class="p">(</span><span class="nv">$commande</span><span class="p">[</span><span class="s1">&#39;statut&#39;</span><span class="p">])</span> <span class="p">{</span>
+                                    <span class="s1">&#39;BROUILLON&#39;</span>    <span class="o">=&gt;</span> <span class="s1">&#39;bg-gray-100 text-gray-700&#39;</span><span class="p">,</span>
+                                    <span class="s1">&#39;VALIDÉ&#39;</span>       <span class="o">=&gt;</span> <span class="s1">&#39;bg-blue-50 text-blue-700&#39;</span><span class="p">,</span>
+                                    <span class="s1">&#39;REÇU_TOTAL&#39;</span>   <span class="o">=&gt;</span> <span class="s1">&#39;bg-green-50 text-green-700&#39;</span><span class="p">,</span>
+                                    <span class="s1">&#39;ANNULÉ&#39;</span>       <span class="o">=&gt;</span> <span class="s1">&#39;bg-red-50 text-red-700&#39;</span><span class="p">,</span>
+                                    <span class="k">default</span>        <span class="o">=&gt;</span> <span class="s1">&#39;bg-gray-100 text-gray-600&#39;</span><span class="p">,</span>
+                                <span class="p">}</span> <span class="cp">?&gt;</span><span class="x">&quot;&gt;</span>
+<span class="x">                                </span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="nv">$commande</span><span class="p">[</span><span class="s1">&#39;statut&#39;</span><span class="p">])</span> <span class="cp">?&gt;</span>
+<span class="x">                            &lt;/span&gt;</span>
+<span class="x">                        &lt;/td&gt;</span>
+<span class="x">                        &lt;td class=&quot;px-4 py-3 text-right space-x-2&quot;&gt;</span>
+<span class="x">                            &lt;a href=&quot;</span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nx">BASE_URL</span> <span class="cp">?&gt;</span><span class="x">/approvisionnements/commandes/editer/</span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nv">$commande</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="cp">?&gt;</span><span class="x">&quot;</span>
+<span class="x">                               class=&quot;text-blue-600 hover:text-blue-800&quot;&gt;</span>
+<span class="x">                                &lt;i class=&quot;fa-solid fa-pen-to-square&quot;&gt;&lt;/i&gt;</span>
+<span class="x">                            &lt;/a&gt;</span>
+<span class="x">                            &lt;a href=&quot;</span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nx">BASE_URL</span> <span class="cp">?&gt;</span><span class="x">/approvisionnements/commandes/pdf/</span><span class="cp">&lt;?</span><span class="o">=</span> <span class="nv">$commande</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="cp">?&gt;</span><span class="x">&quot;</span>
+<span class="x">                               class=&quot;text-gray-500 hover:text-gray-700&quot; target=&quot;_blank&quot;&gt;</span>
+<span class="x">                                &lt;i class=&quot;fa-solid fa-file-pdf&quot;&gt;&lt;/i&gt;</span>
+<span class="x">                            &lt;/a&gt;</span>
+<span class="x">                        &lt;/td&gt;</span>
+<span class="x">                    &lt;/tr&gt;</span>
+<span class="x">                </span><span class="cp">&lt;?php</span> <span class="k">endforeach</span><span class="p">;</span> <span class="cp">?&gt;</span>
+<span class="x">            &lt;/tbody&gt;</span>
+<span class="x">        &lt;/table&gt;</span>
+<span class="x">    &lt;/div&gt;</span>
+
+<span class="x">&lt;/div&gt;</span>
+</code></pre>
+</div>
+
+<hr />
+
+<h2 id="6-css-regles-dutilisation">6. CSS — RÈGLES D'UTILISATION</h2>
+
+<h3 id="61-gestion-des-styles">6.1 Gestion des styles</h3>
+
+<p>Le projet utilise du CSS natif. Modifiez directement <code>public/assets/css/app.css</code> pour ajuster l'apparence globale. Il n'y a pas d'étape de compilation Tailwind dans ce dépôt.</p>
+
+<blockquote>
+  <p>Le fichier <code>public/assets/css/app.css</code> doit être commité dans le dépôt.<br />
+  Le fichier <code>node_modules/</code> ne doit jamais être commité.</p>
+</blockquote>
+
+<h3 id="62-classes-utilitaires-communes-a-utiliser-de-maniere-coherente">6.2 Classes utilitaires communes — à utiliser de manière cohérente</h3>
+
+<table>
+<thead>
+<tr>
+  <th>Élément</th>
+  <th>Classes utilitaires</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Carte/panneau</td>
+  <td><code>bg-white rounded-lg border border-gray-200 p-4</code></td>
+</tr>
+<tr>
+  <td>Bouton primaire</td>
+  <td><code>bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm transition-colors</code></td>
+</tr>
+<tr>
+  <td>Bouton secondaire</td>
+  <td><code>bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm transition-colors</code></td>
+</tr>
+<tr>
+  <td>Bouton danger</td>
+  <td><code>bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm transition-colors</code></td>
+</tr>
+<tr>
+  <td>Champ input</td>
+  <td><code>w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500</code></td>
+</tr>
+<tr>
+  <td>Label</td>
+  <td><code>block text-sm font-medium text-gray-700 mb-1</code></td>
+</tr>
+<tr>
+  <td>Message succès</td>
+  <td><code>bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md text-sm</code></td>
+</tr>
+<tr>
+  <td>Message erreur</td>
+  <td><code>bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md text-sm</code></td>
+</tr>
+<tr>
+  <td>En-tête tableau</td>
+  <td><code>bg-gray-50 border-b border-gray-200</code> · cellules : <code>px-4 py-3 text-left font-medium text-gray-600</code></td>
+</tr>
+<tr>
+  <td>Ligne tableau</td>
+  <td><code>hover:bg-gray-50</code> · cellules : <code>px-4 py-3</code></td>
+</tr>
+</tbody>
+</table>
+
+<hr />
+
+<h2 id="7-base-de-donnees-regles-dacces">7. BASE DE DONNÉES — RÈGLES D'ACCÈS</h2>
+
+<h3 id="71-coredatabasephp-singleton-pdo">7.1 <code>core/Database.php</code> — Singleton PDO</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="cp">&lt;?php</span>
+<span class="c1">// core/Database.php</span>
+
+<span class="k">class</span> <span class="nc">Database</span> <span class="p">{</span>
+
+    <span class="k">private</span> <span class="k">static</span> <span class="o">?</span><span class="nx">Database</span> <span class="nv">$instance</span> <span class="o">=</span> <span class="k">null</span><span class="p">;</span>
+    <span class="k">private</span> <span class="nx">PDO</span> <span class="nv">$connexion</span><span class="p">;</span>
+
+    <span class="k">private</span> <span class="k">function</span> <span class="fm">__construct</span><span class="p">()</span> <span class="p">{</span>
+        <span class="k">require_once</span> <span class="nx">ROOT</span> <span class="o">.</span> <span class="s1">&#39;/config/database.php&#39;</span><span class="p">;</span>
+        <span class="k">try</span> <span class="p">{</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">connexion</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">PDO</span><span class="p">(</span>
+                <span class="s2">&quot;pgsql:host=&quot;</span> <span class="o">.</span> <span class="nx">DB_HOTE</span> <span class="o">.</span> <span class="s2">&quot;;dbname=&quot;</span> <span class="o">.</span> <span class="nx">DB_NOM</span> <span class="o">.</span> <span class="s2">&quot;;port=&quot;</span> <span class="o">.</span> <span class="nx">DB_PORT</span><span class="p">,</span>
+                <span class="nx">DB_UTILISATEUR</span><span class="p">,</span>
+                <span class="nx">DB_MOT_DE_PASSE</span><span class="p">,</span>
+                <span class="p">[</span>
+                    <span class="nx">PDO</span><span class="o">::</span><span class="na">ATTR_ERRMODE</span>            <span class="o">=&gt;</span> <span class="nx">PDO</span><span class="o">::</span><span class="na">ERRMODE_EXCEPTION</span><span class="p">,</span>
+                    <span class="nx">PDO</span><span class="o">::</span><span class="na">ATTR_DEFAULT_FETCH_MODE</span> <span class="o">=&gt;</span> <span class="nx">PDO</span><span class="o">::</span><span class="na">FETCH_ASSOC</span><span class="p">,</span>
+                    <span class="nx">PDO</span><span class="o">::</span><span class="na">ATTR_EMULATE_PREPARES</span>   <span class="o">=&gt;</span> <span class="k">false</span><span class="p">,</span>
+                <span class="p">]</span>
+            <span class="p">);</span>
+        <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">PDOException</span> <span class="nv">$erreur</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nb">error_log</span><span class="p">(</span><span class="nv">$erreur</span><span class="o">-&gt;</span><span class="na">getMessage</span><span class="p">());</span>
+            <span class="k">die</span><span class="p">(</span><span class="s2">&quot;Erreur de connexion à la base de données.&quot;</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">getInstance</span><span class="p">()</span><span class="o">:</span> <span class="nx">self</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">self</span><span class="o">::</span><span class="nv">$instance</span> <span class="o">===</span> <span class="k">null</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">self</span><span class="o">::</span><span class="nv">$instance</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">self</span><span class="p">();</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="nx">self</span><span class="o">::</span><span class="nv">$instance</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">requete</span><span class="p">(</span><span class="nx">string</span> <span class="nv">$sql</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$parametres</span> <span class="o">=</span> <span class="p">[])</span><span class="o">:</span> <span class="nx">self</span> <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">dernierResultat</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">connexion</span><span class="o">-&gt;</span><span class="na">prepare</span><span class="p">(</span><span class="nv">$sql</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">dernierResultat</span><span class="o">-&gt;</span><span class="na">execute</span><span class="p">(</span><span class="nv">$parametres</span><span class="p">);</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">toutRecuperer</span><span class="p">()</span><span class="o">:</span> <span class="k">array</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">dernierResultat</span><span class="o">-&gt;</span><span class="na">fetchAll</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">unRecuperer</span><span class="p">()</span><span class="o">:</span> <span class="k">array</span><span class="o">|</span><span class="k">false</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">dernierResultat</span><span class="o">-&gt;</span><span class="na">fetch</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">dernierIdentifiant</span><span class="p">()</span><span class="o">:</span> <span class="nx">string</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">connexion</span><span class="o">-&gt;</span><span class="na">lastInsertId</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+</div>
+
+<h3 id="72-regles-sql">7.2 Règles SQL</h3>
+
+<ul>
+<li>Toujours utiliser des <strong>paramètres nommés</strong> (<code>:nom</code>) plutôt que <code>?</code></li>
+<li>Toujours utiliser <code>RETURNING id</code> après un <code>INSERT</code> pour récupérer l'identifiant</li>
+<li>Ne jamais construire une requête SQL par concaténation de variables</li>
+<li>Les transactions (<code>BEGIN</code> / <code>COMMIT</code> / <code>ROLLBACK</code>) sont obligatoires quand plusieurs tables sont modifiées ensemble (ex: créer une facture + ses lignes)</li>
+</ul>
+
+<div class="codehilite">
+<pre><span></span><code><span class="x">// ✅ CORRECT — transaction pour opération multi-tables</span>
+<span class="x">public function creerAvecLignes(array $entete, array $lignes): int {</span>
+<span class="x">    $bd = Database::getInstance();</span>
+<span class="x">    try {</span>
+<span class="x">        $bd-&gt;connexion-&gt;beginTransaction();</span>
+<span class="x">        // ... insertions ...</span>
+<span class="x">        $bd-&gt;connexion-&gt;commit();</span>
+<span class="x">        return $identifiant;</span>
+<span class="x">    } catch (Exception $erreur) {</span>
+<span class="x">        $bd-&gt;connexion-&gt;rollBack();</span>
+<span class="x">        throw $erreur;</span>
+<span class="x">    }</span>
+<span class="x">}</span>
+</code></pre>
+</div>
+
+<hr />
+
+<h2 id="8-systeme-dauthentification-droits">8. SYSTÈME D'AUTHENTIFICATION &amp; DROITS</h2>
+
+<h3 id="81-contrat-coreauthphp-groupe-4-livraison-semaine-1">8.1 Contrat <code>core/Auth.php</code> (Groupe 4 — livraison semaine 1)</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="x">// Méthodes garanties disponibles</span>
+
+<span class="x">Auth::verifierConnexion(): void</span>
+<span class="x">// Redirige vers /connexion si aucune session active</span>
+
+<span class="x">Auth::verifierDroit(string $codeDroit): void</span>
+<span class="x">// Redirige vers /acces-refuse si l&#39;utilisateur n&#39;a pas le droit</span>
+
+<span class="x">Auth::peut(string $codeDroit): bool</span>
+<span class="x">// Retourne true/false — pour les affichages conditionnels dans les vues</span>
+
+<span class="x">Auth::utilisateurCourant(): array</span>
+<span class="x">// Retourne [&#39;id&#39;, &#39;nom&#39;, &#39;prenom&#39;, &#39;login&#39;, &#39;groupe_id&#39;, &#39;groupe_nom&#39;]</span>
+</code></pre>
+</div>
+
+<h3 id="82-codes-de-droits-par-module">8.2 Codes de droits par module</h3>
+
+<table>
+<thead>
+<tr>
+  <th>Code</th>
+  <th>Module</th>
+  <th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>APPRO_LIRE</code></td>
+  <td>Approvisionnements</td>
+  <td>Consulter</td>
+</tr>
+<tr>
+  <td><code>APPRO_CREER</code></td>
+  <td>Approvisionnements</td>
+  <td>Créer</td>
+</tr>
+<tr>
+  <td><code>APPRO_MODIFIER</code></td>
+  <td>Approvisionnements</td>
+  <td>Éditer</td>
+</tr>
+<tr>
+  <td><code>APPRO_SUPPRIMER</code></td>
+  <td>Approvisionnements</td>
+  <td>Supprimer</td>
+</tr>
+<tr>
+  <td><code>VENTE_LIRE</code></td>
+  <td>Ventes</td>
+  <td>Consulter</td>
+</tr>
+<tr>
+  <td><code>VENTE_CREER</code></td>
+  <td>Ventes</td>
+  <td>Créer</td>
+</tr>
+<tr>
+  <td><code>VENTE_MODIFIER</code></td>
+  <td>Ventes</td>
+  <td>Éditer</td>
+</tr>
+<tr>
+  <td><code>VENTE_SUPPRIMER</code></td>
+  <td>Ventes</td>
+  <td>Supprimer</td>
+</tr>
+<tr>
+  <td><code>STRUCTURE_LIRE</code></td>
+  <td>Structure</td>
+  <td>Consulter</td>
+</tr>
+<tr>
+  <td><code>STRUCTURE_CREER</code></td>
+  <td>Structure</td>
+  <td>Créer</td>
+</tr>
+<tr>
+  <td><code>STRUCTURE_MODIFIER</code></td>
+  <td>Structure</td>
+  <td>Éditer</td>
+</tr>
+<tr>
+  <td><code>STRUCTURE_SUPPRIMER</code></td>
+  <td>Structure</td>
+  <td>Supprimer</td>
+</tr>
+<tr>
+  <td><code>USERS_LIRE</code></td>
+  <td>Utilisateurs</td>
+  <td>Consulter</td>
+</tr>
+<tr>
+  <td><code>USERS_CREER</code></td>
+  <td>Utilisateurs</td>
+  <td>Créer</td>
+</tr>
+<tr>
+  <td><code>USERS_MODIFIER</code></td>
+  <td>Utilisateurs</td>
+  <td>Éditer</td>
+</tr>
+<tr>
+  <td><code>USERS_SUPPRIMER</code></td>
+  <td>Utilisateurs</td>
+  <td>Supprimer</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="83-stub-a-utiliser-en-attendant-authphp">8.3 Stub à utiliser en attendant <code>Auth.php</code></h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="cp">&lt;?php</span>
+<span class="c1">// modules/[votre_module]/stubs/AuthStub.php</span>
+<span class="c1">// ⚠️ FICHIER TEMPORAIRE — supprimer dès que core/Auth.php est livré</span>
+
+<span class="k">class</span> <span class="nc">Auth</span> <span class="p">{</span>
+    <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">verifierConnexion</span><span class="p">()</span><span class="o">:</span> <span class="nx">void</span> <span class="p">{</span> <span class="cm">/* rien */</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">verifierDroit</span><span class="p">(</span><span class="nx">string</span> <span class="nv">$code</span><span class="p">)</span><span class="o">:</span> <span class="nx">void</span> <span class="p">{</span> <span class="cm">/* rien */</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">peut</span><span class="p">(</span><span class="nx">string</span> <span class="nv">$code</span><span class="p">)</span><span class="o">:</span> <span class="nx">bool</span> <span class="p">{</span> <span class="k">return</span> <span class="k">true</span><span class="p">;</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">utilisateurCourant</span><span class="p">()</span><span class="o">:</span> <span class="k">array</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="s1">&#39;id&#39;</span>         <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;nom&#39;</span>        <span class="o">=&gt;</span> <span class="s1">&#39;Utilisateur&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;prenom&#39;</span>     <span class="o">=&gt;</span> <span class="s1">&#39;Test&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;login&#39;</span>      <span class="o">=&gt;</span> <span class="s1">&#39;test&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;groupe_id&#39;</span>  <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s1">&#39;groupe_nom&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Administrateurs&#39;</span><span class="p">,</span>
+        <span class="p">];</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+</div>
+
+<hr />
+
+<h2 id="9-generation-pdf-fpdftcpdf">9. GÉNÉRATION PDF — FPDF/TCPDF</h2>
+
+<h3 id="91-structure-dune-classe-pdf">9.1 Structure d'une classe PDF</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="cp">&lt;?php</span>
+<span class="c1">// modules/approvisionnements/pdf/BonCommandePDF.php</span>
+
+<span class="k">require_once</span> <span class="nx">ROOT</span> <span class="o">.</span> <span class="s1">&#39;/vendor/fpdf/fpdf.php&#39;</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">BonCommandePDF</span> <span class="k">extends</span> <span class="nx">FPDF</span> <span class="p">{</span>
+
+    <span class="k">private</span> <span class="k">array</span> <span class="nv">$commande</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="fm">__construct</span><span class="p">(</span><span class="k">array</span> <span class="nv">$commande</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">parent</span><span class="o">::</span><span class="na">__construct</span><span class="p">(</span><span class="s1">&#39;P&#39;</span><span class="p">,</span> <span class="s1">&#39;mm&#39;</span><span class="p">,</span> <span class="s1">&#39;A4&#39;</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">commande</span> <span class="o">=</span> <span class="nv">$commande</span><span class="p">;</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">SetMargins</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">15</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">SetAutoPageBreak</span><span class="p">(</span><span class="k">true</span><span class="p">,</span> <span class="mi">20</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// En-tête de page (appelé automatiquement par FPDF)</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">Header</span><span class="p">()</span><span class="o">:</span> <span class="nx">void</span> <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">SetFont</span><span class="p">(</span><span class="s1">&#39;Arial&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="mi">14</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">Cell</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s1">&#39;BON DE COMMANDE FOURNISSEUR&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">SetFont</span><span class="p">(</span><span class="s1">&#39;Arial&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">Cell</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="s1">&#39;N° &#39;</span> <span class="o">.</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">commande</span><span class="p">[</span><span class="s1">&#39;numero&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">Ln</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Pied de page</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">Footer</span><span class="p">()</span><span class="o">:</span> <span class="nx">void</span> <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">SetY</span><span class="p">(</span><span class="o">-</span><span class="mi">15</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">SetFont</span><span class="p">(</span><span class="s1">&#39;Arial&#39;</span><span class="p">,</span> <span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="mi">8</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">Cell</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s1">&#39;Page &#39;</span> <span class="o">.</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">PageNo</span><span class="p">()</span> <span class="o">.</span> <span class="s1">&#39;/{nb}&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Méthode principale — envoie le PDF au navigateur</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">generer</span><span class="p">()</span><span class="o">:</span> <span class="nx">void</span> <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">AliasNbPages</span><span class="p">();</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">AddPage</span><span class="p">();</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">construireCorps</span><span class="p">();</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">Output</span><span class="p">(</span><span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="s1">&#39;bon_commande_&#39;</span> <span class="o">.</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">commande</span><span class="p">[</span><span class="s1">&#39;numero&#39;</span><span class="p">]</span> <span class="o">.</span> <span class="s1">&#39;.pdf&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">private</span> <span class="k">function</span> <span class="nf">construireCorps</span><span class="p">()</span><span class="o">:</span> <span class="nx">void</span> <span class="p">{</span>
+        <span class="c1">// Informations fournisseur</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">SetFont</span><span class="p">(</span><span class="s1">&#39;Arial&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">Cell</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="s1">&#39;Fournisseur : &#39;</span> <span class="o">.</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">commande</span><span class="p">[</span><span class="s1">&#39;fournisseur_nom&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">Ln</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
+
+        <span class="c1">// En-tête du tableau des lignes</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">SetFillColor</span><span class="p">(</span><span class="mi">230</span><span class="p">,</span> <span class="mi">230</span><span class="p">,</span> <span class="mi">230</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">SetFont</span><span class="p">(</span><span class="s1">&#39;Arial&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="mi">9</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">Cell</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="s1">&#39;Désignation&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">,</span> <span class="k">true</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">Cell</span><span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="s1">&#39;Qté&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="k">true</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">Cell</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="s1">&#39;PU HT&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="k">true</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">Cell</span><span class="p">(</span><span class="mi">35</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="s1">&#39;Montant HT&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="k">true</span><span class="p">);</span>
+
+        <span class="c1">// Lignes</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">SetFont</span><span class="p">(</span><span class="s1">&#39;Arial&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">9</span><span class="p">);</span>
+        <span class="k">foreach</span> <span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">commande</span><span class="p">[</span><span class="s1">&#39;lignes&#39;</span><span class="p">]</span> <span class="k">as</span> <span class="nv">$ligne</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">Cell</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="nv">$ligne</span><span class="p">[</span><span class="s1">&#39;designation&#39;</span><span class="p">],</span> <span class="mi">1</span><span class="p">);</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">Cell</span><span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="nv">$ligne</span><span class="p">[</span><span class="s1">&#39;quantite_commandee&#39;</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">);</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">Cell</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="nb">number_format</span><span class="p">(</span><span class="nv">$ligne</span><span class="p">[</span><span class="s1">&#39;prix_unitaire_ht&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;R&#39;</span><span class="p">);</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">Cell</span><span class="p">(</span><span class="mi">35</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="nb">number_format</span><span class="p">(</span><span class="nv">$ligne</span><span class="p">[</span><span class="s1">&#39;montant_ht&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;R&#39;</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+</div>
+
+<hr />
+
+<h2 id="10-gestion-des-stubs-inter-modules">10. GESTION DES STUBS INTER-MODULES</h2>
+
+<h3 id="101-principe">10.1 Principe</h3>
+
+<p>Un stub est un <strong>remplacement temporaire</strong> d'une dépendance non encore livrée. Il respecte exactement la même signature que la vraie classe.</p>
+
+<h3 id="102-declarer-une-dependance-dans-configappphp">10.2 Déclarer une dépendance dans <code>config/app.php</code></h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="cp">&lt;?php</span>
+<span class="c1">// config/app.php</span>
+
+<span class="nb">define</span><span class="p">(</span><span class="s1">&#39;APP_NOM&#39;</span><span class="p">,</span>    <span class="s1">&#39;Système de gestion&#39;</span><span class="p">);</span>
+<span class="nb">define</span><span class="p">(</span><span class="s1">&#39;BASE_URL&#39;</span><span class="p">,</span>   <span class="s1">&#39;http://localhost/projet/public&#39;</span><span class="p">);</span>
+<span class="nb">define</span><span class="p">(</span><span class="s1">&#39;ROOT&#39;</span><span class="p">,</span>       <span class="nb">dirname</span><span class="p">(</span><span class="no">__DIR__</span><span class="p">));</span>
+
+<span class="c1">// ---- Stubs actifs (mettre à false dès que le vrai code est livré) ----</span>
+<span class="nb">define</span><span class="p">(</span><span class="s1">&#39;STUB_AUTH&#39;</span><span class="p">,</span>        <span class="k">false</span><span class="p">);</span>  <span class="c1">// true = utilise AuthStub.php</span>
+<span class="nb">define</span><span class="p">(</span><span class="s1">&#39;STUB_PRODUIT&#39;</span><span class="p">,</span>     <span class="k">false</span><span class="p">);</span>  <span class="c1">// true = utilise ProduitStub.php</span>
+<span class="nb">define</span><span class="p">(</span><span class="s1">&#39;STUB_FOURNISSEUR&#39;</span><span class="p">,</span> <span class="k">false</span><span class="p">);</span>
+<span class="nb">define</span><span class="p">(</span><span class="s1">&#39;STUB_CLIENT&#39;</span><span class="p">,</span>      <span class="k">false</span><span class="p">);</span>
+<span class="nb">define</span><span class="p">(</span><span class="s1">&#39;STUB_BANQUE&#39;</span><span class="p">,</span>      <span class="k">false</span><span class="p">);</span>
+</code></pre>
+</div>
+
+<h3 id="103-chargement-conditionnel-dans-publicindexphp">10.3 Chargement conditionnel dans <code>public/index.php</code></h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="x">// Chargement Auth</span>
+<span class="x">if (STUB_AUTH) {</span>
+<span class="x">    require_once ROOT . &#39;/modules/approvisionnements/stubs/AuthStub.php&#39;;</span>
+<span class="x">} else {</span>
+<span class="x">    require_once ROOT . &#39;/core/Auth.php&#39;;</span>
+<span class="x">}</span>
+</code></pre>
+</div>
+
+<h3 id="104-regle-de-suppression-des-stubs">10.4 Règle de suppression des stubs</h3>
+
+<p>Quand le vrai code est livré sur <code>develop</code> :
+1. Mettre la constante à <code>false</code> dans <code>config/app.php</code>
+2. Supprimer le fichier stub
+3. Committer avec le message : <code>[MODULE] chore : stub NomClasse supprimé — core livré</code></p>
+
+<hr />
+
+<h2 id="11-tableau-des-responsabilites">11. TABLEAU DES RESPONSABILITÉS</h2>
+
+<table>
+<thead>
+<tr>
+  <th>Fichier / Fonctionnalité</th>
+  <th>Responsable</th>
+  <th>Dépend de</th>
+  <th>Délai cible</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>core/Auth.php</code> complet</td>
+  <td>Groupe 4</td>
+  <td>—</td>
+  <td>Semaine 1</td>
+</tr>
+<tr>
+  <td><code>core/Database.php</code></td>
+  <td>Groupe 4</td>
+  <td>—</td>
+  <td>Semaine 1</td>
+</tr>
+<tr>
+  <td><code>core/Controller.php</code></td>
+  <td>Groupe 4</td>
+  <td>—</td>
+  <td>Semaine 1</td>
+</tr>
+<tr>
+  <td><code>views/layouts/base.php</code></td>
+  <td>Groupe 4</td>
+  <td>—</td>
+  <td>Semaine 1</td>
+</tr>
+<tr>
+  <td><code>views/layouts/sidebar.php</code></td>
+  <td>Groupe 4</td>
+  <td>Auth.php</td>
+  <td>Semaine 1</td>
+</tr>
+<tr>
+  <td><code>StockService.php</code></td>
+  <td>Groupes 1 + 2 (co-écrit)</td>
+  <td>Produit</td>
+  <td>Semaine 2</td>
+</tr>
+<tr>
+  <td>Module Structure complet</td>
+  <td>Groupe 3</td>
+  <td>Auth.php</td>
+  <td>Semaines 2-3</td>
+</tr>
+<tr>
+  <td>Module Approvisionnements</td>
+  <td>Groupe 1</td>
+  <td>Auth + Produit + Fournisseur</td>
+  <td>Semaines 2-4</td>
+</tr>
+<tr>
+  <td>Module Ventes</td>
+  <td>Groupe 2</td>
+  <td>Auth + Produit + Client</td>
+  <td>Semaines 2-4</td>
+</tr>
+<tr>
+  <td>PDFs tous modules</td>
+  <td>Chaque groupe</td>
+  <td>Son module complet</td>
+  <td>Semaine 5</td>
+</tr>
+</tbody>
+</table>
+
+<hr />
+
+<h2 id="12-checklist-avant-chaque-pull-request">12. CHECKLIST AVANT CHAQUE PULL REQUEST</h2>
+
+<p>Avant d'ouvrir une PR vers <code>develop</code>, vérifier chaque point :</p>
+
+<p><strong>Git</strong>
+- [ ] Ma branche est à jour avec <code>develop</code> (<code>git merge develop</code> effectué)
+- [ ] Tous mes commits respectent le format <code>[MODULE] type : description</code>
+- [ ] Aucun fichier de configuration sensible n'est commité
+- [ ] Le fichier <code>public/assets/css/app.css</code> compilé est inclus</p>
+
+<p><strong>Code</strong>
+- [ ] Aucun <code>var_dump</code>, <code>print_r</code> ou <code>echo</code> de debug laissé dans le code
+- [ ] Toutes les sorties HTML utilisent <code>htmlspecialchars()</code>
+- [ ] Toutes les requêtes SQL utilisent des paramètres préparés
+- [ ] Aucune requête SQL directement dans une vue
+- [ ] Chaque action d'écriture vérifie la méthode HTTP (POST)
+- [ ] Chaque page protégée appelle <code>Auth::verifierConnexion()</code></p>
+
+<p><strong>Structure</strong>
+- [ ] Chaque controller hérite de <code>Controller</code>
+- [ ] Chaque model hérite de <code>Model</code>
+- [ ] Les vues n'appellent pas <code>ob_start()</code> manuellement
+- [ ] Les vues ne contiennent pas de balises <code>&lt;html&gt;</code>, <code>&lt;head&gt;</code>, <code>&lt;body&gt;</code>
+- [ ] Les stubs non nécessaires ont été supprimés</p>
+
+<p><strong>Interface</strong>
+- [ ] Les classes CSS des boutons/tableaux/formulaires respectent le tableau de la section 6.2
+- [ ] Les messages d'erreur et de succès utilisent les classes définies
+- [ ] Le paramètre <code>$moduleActif</code> est bien transmis pour la surbrillance du menu</p>
+
+<hr />
+
+<p><em>Toute question sur ce document → ouvrir une issue GitHub avec le label <code>question-doc</code>.</em></p>
+
+</body>
+</html>
