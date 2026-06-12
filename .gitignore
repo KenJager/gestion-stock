@@ -1,0 +1,16 @@
+# Configuration locale (jamais commitée)
+.env
+config/database.local.php
+
+# Corbeille XML (données runtime, propres à chaque environnement)
+storage/corbeille/*.xml
+!storage/corbeille/.gitkeep
+
+# Scripts de seed locaux (contiennent des hash de mots de passe générés)
+config/seed_admin.sql
+config/seed_test.sql
+config/patch_audit.sql
+
+# Divers
+*.log
+.DS_Store
