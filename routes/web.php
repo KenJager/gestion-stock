@@ -214,3 +214,14 @@ Router::get( '/ventes/etats/journalier',       'Ventes\Controllers\EtatControlle
 Router::get( '/ventes/etats/annuel',           'Ventes\Controllers\EtatController@annuel');
 Router::get( '/ventes/etats/journalier/pdf',   'Ventes\Controllers\EtatController@journalierPdf');
 Router::get( '/ventes/etats/annuel/pdf',       'Ventes\Controllers\EtatController@annuelPdf');
+// Paramètres de connexion (utilisateur courant)
+Router::get( '/parametres',  'Utilisateurs\Controllers\ParametreController@index');
+Router::post('/parametres',  'Utilisateurs\Controllers\ParametreController@mettreAJour');
+
+// Journal d'audit (lecture seule)
+Router::get('/audit', 'Utilisateurs\Controllers\AuditController@index');
+
+// Corbeille (module Utilisateurs)
+Router::get( '/utilisateurs/corbeille',          'Utilisateurs\Controllers\CorbeilleController@index');
+Router::post('/utilisateurs/corbeille/restaurer','Utilisateurs\Controllers\CorbeilleController@restaurer');
+Router::post('/utilisateurs/corbeille/purger',   'Utilisateurs\Controllers\CorbeilleController@purger');
