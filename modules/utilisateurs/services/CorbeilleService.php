@@ -2,7 +2,7 @@
 // modules/Utilisateurs/Services/CorbeilleService.php
 // Restauration spécifique aux tables du module Utilisateurs.
 
-namespace Utilisateurs\Services;
+namespace utilisateurs\services;
 
 class CorbeilleService {
 

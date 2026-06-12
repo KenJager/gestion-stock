@@ -1,10 +1,10 @@
 <?php
-// modules/Utilisateurs/Controllers/GroupeController.php
+// modules/utilisateurs/Controllers/GroupeController.php
 
-namespace Utilisateurs\Controllers;
+namespace utilisateurs\controllers;
 
-use Utilisateurs\Models\GroupeUtilisateur;
-use Utilisateurs\Models\Droit;
+use utilisateurs\models\GroupeUtilisateur;
+use utilisateurs\models\Droit;
 
 class GroupeController extends \Controller {
 
@@ -19,7 +19,7 @@ class GroupeController extends \Controller {
     // GET /groupes
     public function index(): void {
         $groupes = $this->modele->listerTout();
-        $this->rendrePage('Utilisateurs', 'groupe_liste', [
+        $this->rendrePage('utilisateurs', 'groupe_liste', [
             'titre'       => 'Groupes d\'utilisateurs',
             'moduleActif' => 'utilisateurs',
             'groupes'     => $groupes,
@@ -32,7 +32,7 @@ class GroupeController extends \Controller {
     // GET /groupes/creer
     public function creer(): void {
         \Auth::verifierDroit('USERS_CREER');
-        $this->rendrePage('Utilisateurs', 'groupe_formulaire', [
+        $this->rendrePage('utilisateurs', 'groupe_formulaire', [
             'titre'       => 'Nouveau groupe',
             'moduleActif' => 'utilisateurs',
             'groupe'      => null,
@@ -69,7 +69,7 @@ class GroupeController extends \Controller {
             $this->redirigerVers('/groupes');
         }
 
-        $this->rendrePage('Utilisateurs', 'groupe_formulaire', [
+        $this->rendrePage('utilisateurs', 'groupe_formulaire', [
             'titre'       => 'Modifier le groupe',
             'moduleActif' => 'utilisateurs',
             'groupe'      => $groupe,
@@ -137,7 +137,7 @@ class GroupeController extends \Controller {
         $droitsParModule = (new Droit())->listerParModule();
         $droitsAffectes  = $this->modele->droitsAffectes($id);
 
-        $this->rendrePage('Utilisateurs', 'groupe_droits', [
+        $this->rendrePage('utilisateurs', 'groupe_droits', [
             'titre'            => 'Droits du groupe : ' . $groupe['nom'],
             'moduleActif'      => 'utilisateurs',
             'groupe'           => $groupe,

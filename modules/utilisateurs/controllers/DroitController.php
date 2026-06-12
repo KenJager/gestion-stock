@@ -1,9 +1,9 @@
 <?php
-// modules/Utilisateurs/Controllers/DroitController.php
+// modules/utilisateurs/Controllers/DroitController.php
 
-namespace Utilisateurs\Controllers;
+namespace utilisateurs\controllers;
 
-use Utilisateurs\Models\Droit;
+use utilisateurs\models\Droit;
 
 class DroitController extends \Controller {
 
@@ -16,7 +16,7 @@ class DroitController extends \Controller {
     public function index(): void {
         $droitsParModule = (new Droit())->listerParModule();
 
-        $this->rendrePage('Utilisateurs', 'droit_liste', [
+        $this->rendrePage('utilisateurs', 'droit_liste', [
             'titre'           => 'Droits d\'accès',
             'moduleActif'     => 'utilisateurs',
             'droitsParModule' => $droitsParModule,

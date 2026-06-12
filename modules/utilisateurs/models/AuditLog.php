@@ -1,7 +1,7 @@
 <?php
 // modules/Utilisateurs/Models/AuditLog.php
 
-namespace Utilisateurs\Models;
+namespace utilisateurs\models;
 
 class AuditLog extends \Model {
 

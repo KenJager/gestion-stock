@@ -2,7 +2,7 @@
 // routes/web.php — Toutes les routes du projet
 // ============================================================================
 // Format handler : 'Namespace\Controllers\NomController@methode'
-// Le namespace correspond au dossier modules/ (ex: Utilisateurs\Controllers\...)
+// Le namespace correspond au dossier modules/ (ex: utilisateurs\controllers\...)
 //
 // Méthodes HTTP utilisées :
 //   GET  → affichage / lecture
@@ -12,16 +12,16 @@
 // ============================================================================
 
 // ── Pages publiques (sans authentification) ──────────────────────────────────
-Router::get('/',        'Utilisateurs\Controllers\AuthController@afficherLogin');
-Router::get('/connexion',  'Utilisateurs\Controllers\AuthController@afficherLogin');
-Router::post('/connexion', 'Utilisateurs\Controllers\AuthController@traiterLogin');
-Router::get('/deconnexion','Utilisateurs\Controllers\AuthController@deconnecter');
+Router::get('/',        'utilisateurs\controllers\AuthController@afficherLogin');
+Router::get('/connexion',  'utilisateurs\controllers\AuthController@afficherLogin');
+Router::post('/connexion', 'utilisateurs\controllers\AuthController@traiterLogin');
+Router::get('/deconnexion','utilisateurs\controllers\AuthController@deconnecter');
 
 // ── Tableau de bord (authentifié) ────────────────────────────────────────────
-Router::get('/tableau-de-bord', 'Utilisateurs\Controllers\DashboardController@index');
+Router::get('/tableau-de-bord', 'utilisateurs\controllers\DashboardController@index');
 
 // ── Accès refusé ─────────────────────────────────────────────────────────────
-Router::get('/acces-refuse', 'Utilisateurs\Controllers\AuthController@accesRefuse');
+Router::get('/acces-refuse', 'utilisateurs\controllers\AuthController@accesRefuse');
 
 
 // ============================================================================
@@ -29,25 +29,25 @@ Router::get('/acces-refuse', 'Utilisateurs\Controllers\AuthController@accesRefus
 // ============================================================================
 
 // Utilisateurs
-Router::get( '/utilisateurs',                  'Utilisateurs\Controllers\UtilisateurController@index');
-Router::get( '/utilisateurs/creer',            'Utilisateurs\Controllers\UtilisateurController@creer');
-Router::post('/utilisateurs/creer',            'Utilisateurs\Controllers\UtilisateurController@enregistrer');
-Router::get( '/utilisateurs/{id}/modifier',    'Utilisateurs\Controllers\UtilisateurController@editer');
-Router::post('/utilisateurs/{id}/modifier',    'Utilisateurs\Controllers\UtilisateurController@mettreAJour');
-Router::post('/utilisateurs/{id}/supprimer',   'Utilisateurs\Controllers\UtilisateurController@supprimer');
+Router::get( '/utilisateurs',                  'utilisateurs\controllers\UtilisateurController@index');
+Router::get( '/utilisateurs/creer',            'utilisateurs\controllers\UtilisateurController@creer');
+Router::post('/utilisateurs/creer',            'utilisateurs\controllers\UtilisateurController@enregistrer');
+Router::get( '/utilisateurs/{id}/modifier',    'utilisateurs\controllers\UtilisateurController@editer');
+Router::post('/utilisateurs/{id}/modifier',    'utilisateurs\controllers\UtilisateurController@mettreAJour');
+Router::post('/utilisateurs/{id}/supprimer',   'utilisateurs\controllers\UtilisateurController@supprimer');
 
 // Groupes d'utilisateurs
-Router::get( '/groupes',                       'Utilisateurs\Controllers\GroupeController@index');
-Router::get( '/groupes/creer',                 'Utilisateurs\Controllers\GroupeController@creer');
-Router::post('/groupes/creer',                 'Utilisateurs\Controllers\GroupeController@enregistrer');
-Router::get( '/groupes/{id}/modifier',         'Utilisateurs\Controllers\GroupeController@editer');
-Router::post('/groupes/{id}/modifier',         'Utilisateurs\Controllers\GroupeController@mettreAJour');
-Router::post('/groupes/{id}/supprimer',        'Utilisateurs\Controllers\GroupeController@supprimer');
-Router::get( '/groupes/{id}/droits',           'Utilisateurs\Controllers\GroupeController@gererDroits');
-Router::post('/groupes/{id}/droits',           'Utilisateurs\Controllers\GroupeController@enregistrerDroits');
+Router::get( '/groupes',                       'utilisateurs\controllers\GroupeController@index');
+Router::get( '/groupes/creer',                 'utilisateurs\controllers\GroupeController@creer');
+Router::post('/groupes/creer',                 'utilisateurs\controllers\GroupeController@enregistrer');
+Router::get( '/groupes/{id}/modifier',         'utilisateurs\controllers\GroupeController@editer');
+Router::post('/groupes/{id}/modifier',         'utilisateurs\controllers\GroupeController@mettreAJour');
+Router::post('/groupes/{id}/supprimer',        'utilisateurs\controllers\GroupeController@supprimer');
+Router::get( '/groupes/{id}/droits',           'utilisateurs\controllers\GroupeController@gererDroits');
+Router::post('/groupes/{id}/droits',           'utilisateurs\controllers\GroupeController@enregistrerDroits');
 
 // Droits
-Router::get( '/droits',                        'Utilisateurs\Controllers\DroitController@index');
+Router::get( '/droits',                        'utilisateurs\controllers\DroitController@index');
 
 
 // ============================================================================
@@ -215,13 +215,13 @@ Router::get( '/ventes/etats/annuel',           'Ventes\Controllers\EtatControlle
 Router::get( '/ventes/etats/journalier/pdf',   'Ventes\Controllers\EtatController@journalierPdf');
 Router::get( '/ventes/etats/annuel/pdf',       'Ventes\Controllers\EtatController@annuelPdf');
 // Paramètres de connexion (utilisateur courant)
-Router::get( '/parametres',  'Utilisateurs\Controllers\ParametreController@index');
-Router::post('/parametres',  'Utilisateurs\Controllers\ParametreController@mettreAJour');
+Router::get( '/parametres',  'utilisateurs\controllers\ParametreController@index');
+Router::post('/parametres',  'utilisateurs\controllers\ParametreController@mettreAJour');
 
 // Journal d'audit (lecture seule)
-Router::get('/audit', 'Utilisateurs\Controllers\AuditController@index');
+Router::get('/audit', 'utilisateurs\controllers\AuditController@index');
 
 // Corbeille (module Utilisateurs)
-Router::get( '/utilisateurs/corbeille',          'Utilisateurs\Controllers\CorbeilleController@index');
-Router::post('/utilisateurs/corbeille/restaurer','Utilisateurs\Controllers\CorbeilleController@restaurer');
-Router::post('/utilisateurs/corbeille/purger',   'Utilisateurs\Controllers\CorbeilleController@purger');
+Router::get( '/utilisateurs/corbeille',          'utilisateurs\controllers\CorbeilleController@index');
+Router::post('/utilisateurs/corbeille/restaurer','utilisateurs\controllers\CorbeilleController@restaurer');
+Router::post('/utilisateurs/corbeille/purger',   'utilisateurs\controllers\CorbeilleController@purger');

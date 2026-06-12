@@ -31,7 +31,7 @@ abstract class Controller {
 
         // Variables disponibles dans base.php
         $titrePage   = $donnees['titre'] ?? APP_NOM;
-        $moduleActif = $module;
+        $moduleActif = $donnees['moduleActif'] ?? $module;
 
         require ROOT . '/views/layouts/base.php';
     }

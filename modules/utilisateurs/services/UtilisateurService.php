@@ -1,9 +1,9 @@
 <?php
 // modules/Utilisateurs/services/UtilisateurService.php
 
-namespace Utilisateurs\Services;
+namespace utilisateurs\services;
 
-use Utilisateurs\Models\Utilisateur;
+use utilisateurs\models\Utilisateur;
 
 class UtilisateurService {
 

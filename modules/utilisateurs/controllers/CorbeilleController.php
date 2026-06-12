@@ -1,9 +1,9 @@
 <?php
-// modules/Utilisateurs/Controllers/CorbeilleController.php
+// modules/utilisateurs/Controllers/CorbeilleController.php
 
-namespace Utilisateurs\Controllers;
+namespace utilisateurs\controllers;
 
-use Utilisateurs\Services\CorbeilleService;
+use utilisateurs\services\CorbeilleService;
 
 class CorbeilleController extends \Controller {
 
@@ -23,7 +23,7 @@ class CorbeilleController extends \Controller {
         }
         usort($elements, fn($a, $b) => strcmp($b['date_suppression'], $a['date_suppression']));
 
-        $this->rendrePage('Utilisateurs', 'corbeille_liste', [
+        $this->rendrePage('utilisateurs', 'corbeille_liste', [
             'titre'       => 'Corbeille — Utilisateurs',
             'moduleActif' => 'utilisateurs',
             'elements'    => $elements,

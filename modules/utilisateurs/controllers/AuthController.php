@@ -1,9 +1,9 @@
 <?php
-// modules/Utilisateurs/Controllers/AuthController.php
+// modules/utilisateurs/Controllers/AuthController.php
 
-namespace Utilisateurs\Controllers;
+namespace utilisateurs\controllers;
 
-use Utilisateurs\Models\Utilisateur;
+use utilisateurs\models\Utilisateur;
 
 class AuthController {
 
@@ -18,7 +18,7 @@ class AuthController {
         $erreur = $_SESSION['erreur_connexion'] ?? null;
         unset($_SESSION['erreur_connexion']);
 
-        require ROOT . '/modules/Utilisateurs/views/login.php';
+        require ROOT . '/modules/utilisateurs/views/login.php';
     }
 
     public function traiterLogin(): void {
@@ -68,6 +68,6 @@ class AuthController {
     public function accesRefuse(): void {
         \Auth::demarrer();
         http_response_code(403);
-        require ROOT . '/modules/Utilisateurs/views/acces_refuse.php';
+        require ROOT . '/modules/utilisateurs/views/acces_refuse.php';
     }
 }

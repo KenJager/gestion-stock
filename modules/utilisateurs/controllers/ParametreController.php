@@ -1,9 +1,9 @@
 <?php
-// modules/Utilisateurs/Controllers/ParametreController.php
+// modules/utilisateurs/Controllers/ParametreController.php
 
-namespace Utilisateurs\Controllers;
+namespace utilisateurs\controllers;
 
-use Utilisateurs\Models\Utilisateur;
+use utilisateurs\models\Utilisateur;
 
 class ParametreController extends \Controller {
 
@@ -19,7 +19,7 @@ class ParametreController extends \Controller {
         $id = (int) \Auth::utilisateurCourant()['id'];
         $utilisateur = $this->modele->trouverParId($id);
 
-        $this->rendrePage('Utilisateurs', 'parametres', [
+        $this->rendrePage('utilisateurs', 'parametres', [
             'titre'       => 'Mes paramètres',
             'moduleActif' => 'parametres',
             'utilisateur' => $utilisateur,
