@@ -9,6 +9,7 @@ abstract class Controller {
         Auth::verifierConnexion();
         $this->utilisateurCourant = Auth::utilisateurCourant();
     }
+    ///bonjour
 
     /**
      * Rend une vue dans le layout principal via ob_start().
