@@ -69,10 +69,12 @@ $navItems = [
         'chemin'  => '#',
         'droit'   => 'USERS_LIRE',
         'sousmenu' => [
-            ['libelle' => 'Liste des utilisateurs', 'chemin' => '/utilisateurs'],
-            ['libelle' => 'Groupes',                'chemin' => '/groupes'],
-            ['libelle' => 'Droits d\'accès',        'chemin' => '/droits'],
-            ['libelle' => 'Paramètres de connexion','chemin' => '/parametres'],
+            ['libelle' => 'Liste des utilisateurs', 'chemin' => '/utilisateurs',  'droit' => 'USERS_LIRE'],
+            ['libelle' => 'Groupes',                'chemin' => '/groupes',       'droit' => 'USERS_MODIFIER'],
+            ['libelle' => 'Droits d\'accès',        'chemin' => '/droits',        'droit' => 'USERS_MODIFIER'],
+            ['libelle' => 'Paramètres de connexion','chemin' => '/parametres',    'droit' => null],
+            ['libelle' => 'Journal d\'audit',         'chemin' => '/audit',         'droit' => 'USERS_MODIFIER'],
+            ['libelle' => 'Corbeille',               'chemin' => '/utilisateurs/corbeille',     'droit' => 'USERS_MODIFIER'],
         ],
     ],
 ];
@@ -146,11 +148,13 @@ if (!empty($moduleActif) && !in_array($moduleActif, $openModules)) {
                              style="<?= $estOuvert ? '' : 'display: none;' ?>">
                             <div class="submenu">
                                 <?php foreach ($item['sousmenu'] as $sous): ?>
+                                    <?php if (!isset($sous['droit']) || $sous['droit'] === null || \Auth::peut($sous['droit'])): ?>
                                     <a href="<?= BASE_URL . $sous['chemin'] ?>"
                                        class="submenu-link"
                                        data-nav-close>
                                         <?= htmlspecialchars($sous['libelle']) ?>
                                     </a>
+                                    <?php endif; ?>
                                 <?php endforeach; ?>
                             </div>
                         </div>
@@ -173,6 +177,7 @@ if (!empty($moduleActif) && !in_array($moduleActif, $openModules)) {
             </div>
             <a href="<?= BASE_URL ?>/deconnexion" class="logout-btn" title="Se déconnecter">
                 <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Déconnexion</span>
             </a>
         </div>
     </div>
