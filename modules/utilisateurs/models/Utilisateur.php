@@ -1,7 +1,7 @@
 <?php
 // modules/Utilisateurs/Models/Utilisateur.php
 
-namespace Utilisateurs\Models;
+namespace utilisateurs\models;
 
 class Utilisateur extends \Model {
 

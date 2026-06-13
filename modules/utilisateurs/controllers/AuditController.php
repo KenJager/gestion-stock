@@ -1,9 +1,9 @@
 <?php
-// modules/Utilisateurs/Controllers/AuditController.php
+// modules/utilisateurs/Controllers/AuditController.php
 
-namespace Utilisateurs\Controllers;
+namespace utilisateurs\controllers;
 
-use Utilisateurs\Models\AuditLog;
+use utilisateurs\models\AuditLog;
 
 class AuditController extends \Controller {
 
@@ -33,7 +33,7 @@ class AuditController extends \Controller {
         $totalPages = max(1, (int) ceil($total / $parPage));
         $tables     = $this->modele->listerTablesDistinctes();
 
-        $this->rendrePage('Utilisateurs', 'audit_liste', [
+        $this->rendrePage('utilisateurs', 'audit_liste', [
             'titre'       => 'Journal d\'audit',
             'moduleActif' => 'audit',
             'entrees'     => $entrees,

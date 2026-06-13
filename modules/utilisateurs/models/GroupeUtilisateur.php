@@ -1,7 +1,7 @@
 <?php
 // modules/Utilisateurs/Models/GroupeUtilisateur.php
 
-namespace Utilisateurs\Models;
+namespace utilisateurs\models;
 
 class GroupeUtilisateur extends \Model {
 

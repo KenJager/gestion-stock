@@ -1,7 +1,7 @@
 <?php
 // modules/Utilisateurs/Models/Droit.php
 
-namespace Utilisateurs\Models;
+namespace utilisateurs\models;
 
 class Droit extends \Model {
 

@@ -1,11 +1,11 @@
 <?php
-// modules/Utilisateurs/Controllers/UtilisateurController.php
+// modules/utilisateurs/Controllers/UtilisateurController.php
 
-namespace Utilisateurs\Controllers;
+namespace utilisateurs\controllers;
 
-use Utilisateurs\Models\Utilisateur;
-use Utilisateurs\Models\GroupeUtilisateur;
-use Utilisateurs\Services\UtilisateurService;
+use utilisateurs\models\Utilisateur;
+use utilisateurs\models\GroupeUtilisateur;
+use utilisateurs\services\UtilisateurService;
 
 class UtilisateurController extends \Controller {
 
@@ -22,7 +22,7 @@ class UtilisateurController extends \Controller {
     // GET /utilisateurs
     public function index(): void {
         $utilisateurs = $this->modele->listerTout();
-        $this->rendrePage('Utilisateurs', 'utilisateur_liste', [
+        $this->rendrePage('utilisateurs', 'utilisateur_liste', [
             'titre'        => 'Utilisateurs',
             'moduleActif'  => 'utilisateurs',
             'utilisateurs' => $utilisateurs,
@@ -37,7 +37,7 @@ class UtilisateurController extends \Controller {
         \Auth::verifierDroit('USERS_CREER');
         $groupes = (new GroupeUtilisateur())->listerTout();
 
-        $this->rendrePage('Utilisateurs', 'utilisateur_formulaire', [
+        $this->rendrePage('utilisateurs', 'utilisateur_formulaire', [
             'titre'       => 'Nouvel utilisateur',
             'moduleActif' => 'utilisateurs',
             'utilisateur' => null,
@@ -84,7 +84,7 @@ class UtilisateurController extends \Controller {
 
         $groupes = (new GroupeUtilisateur())->listerTout();
 
-        $this->rendrePage('Utilisateurs', 'utilisateur_formulaire', [
+        $this->rendrePage('utilisateurs', 'utilisateur_formulaire', [
             'titre'       => 'Modifier l\'utilisateur',
             'moduleActif' => 'utilisateurs',
             'utilisateur' => $utilisateur,

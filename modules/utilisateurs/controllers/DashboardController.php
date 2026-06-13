@@ -1,12 +1,12 @@
 <?php
-// modules/Utilisateurs/Controllers/DashboardController.php
+// modules/utilisateurs/Controllers/DashboardController.php
 
-namespace Utilisateurs\Controllers;
+namespace utilisateurs\controllers;
 
 class DashboardController extends \Controller {
 
     public function index(): void {
-        $this->rendrePage('Utilisateurs', 'tableau_de_bord', [
+        $this->rendrePage('utilisateurs', 'tableau_de_bord', [
             'titre'       => 'Tableau de bord',
             'moduleActif' => 'tableau-de-bord',
         ]);

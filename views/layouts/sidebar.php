@@ -55,8 +55,9 @@ $navItems = [
             ['libelle' => 'Produits',         'chemin' => '/structure/produits'],
             ['libelle' => 'Fournisseurs',     'chemin' => '/structure/fournisseurs'],
             ['libelle' => 'Clients',          'chemin' => '/structure/clients'],
-            ['libelle' => 'Catégories clients','chemin' => '/structure/categories'],
+            ['libelle' => 'Catégories clients','chemin' => '/structure/categories-clients'],
             ['libelle' => 'Banques',          'chemin' => '/structure/banques'],
+            ['libelle' => 'Corbeille',        'chemin' => '/structure/corbeille', 'droit' => 'STRUCTURE_MODIFIER'],
         ],
     ],
     [
@@ -113,7 +114,7 @@ if (!empty($moduleActif) && !in_array($moduleActif, $openModules)) {
                     <?= htmlspecialchars($item['separateur']) ?>
                 </p>
 
-            <?php elseif ($item['droit'] === null || Auth::peut($item['droit'] ?? '')): ?>
+            <?php elseif ($item['droit'] === null || Auth::peut($item['droit'] ?? '')):?>
                 <?php
                     $estActif     = $moduleActif === $item['module'];
                     $aSousmenu    = !empty($item['sousmenu']);

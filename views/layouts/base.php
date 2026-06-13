@@ -20,7 +20,7 @@ $moduleAssets = $moduleAssets ?? '';  // ← NOUVEAU : pour les assets spécifiq
         <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/modules/<?= $moduleAssets ?>.css">
     <?php endif; ?>
     
-    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"> -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body class="h-full">
 
@@ -76,6 +76,10 @@ $moduleAssets = $moduleAssets ?? '';  // ← NOUVEAU : pour les assets spécifiq
 </div>
 
 <!-- JS GLOBAL -->
+<script>
+    // Exposer BASE_URL en JS pour les scripts front-end
+    window.BASE_URL = "<?= BASE_URL ?>";
+</script>
 <script src="<?= BASE_URL ?>/assets/js/app.js" defer></script>
 
 <!-- JS SPÉCIFIQUE AU MODULE (si défini) -->
