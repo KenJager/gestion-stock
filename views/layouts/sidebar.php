@@ -113,7 +113,7 @@ if (!empty($moduleActif) && !in_array($moduleActif, $openModules)) {
                     <?= htmlspecialchars($item['separateur']) ?>
                 </p>
 
-            <?php elseif ($item['droit'] === null || Auth::peut($item['droit'] ?? '')): ?>
+            <?php elseif ($item['droit'] === null || Auth::peut($item['droit'] ?? '')):?>
                 <?php
                     $estActif     = $moduleActif === $item['module'];
                     $aSousmenu    = !empty($item['sousmenu']);

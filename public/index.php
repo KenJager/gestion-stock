@@ -25,7 +25,7 @@ if (file_exists($envFile)) {
 
 // ── 3. Constantes globales (dépendent du .env) ───────────────────────────────
 define('APP_NOM',  'SGestion');
-define('BASE_URL', rtrim(getenv('APP_URL') ?: 'http://localhost/public', '/'));
+define('BASE_URL', rtrim(getenv('APP_URL') ?: 'http://localhost:8000', '/'));
 
 // ── 4. Rapport d'erreurs ──────────────────────────────────────────────────────
 $env = getenv('APP_ENV') ?: 'development';
