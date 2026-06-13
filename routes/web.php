@@ -55,6 +55,7 @@ Router::get( '/droits',                        'utilisateurs\controllers\DroitCo
 Router::get('/structure/familles', 'structure\controllers\FamilleController@index');
 Router::get('/structure/familles/creer', 'structure\controllers\FamilleController@creer');
 Router::post('/structure/familles', 'structure\controllers\FamilleController@enregistrer');
+Router::get('/structure/familles/detail/{id}', 'structure\controllers\FamilleController@detail');
 Router::get('/structure/familles/editer/{id}', 'structure\controllers\FamilleController@editer');
 Router::post('/structure/familles/modifier/{id}', 'structure\controllers\FamilleController@mettreAJour');
 Router::post('/structure/familles/supprimer/{id}', 'structure\controllers\FamilleController@supprimer');
@@ -62,6 +63,7 @@ Router::post('/structure/familles/supprimer/{id}', 'structure\controllers\Famill
 // Produits
 Router::get('/structure/produits', 'structure\controllers\ProduitController@index');
 Router::get('/structure/produits/creer', 'structure\controllers\ProduitController@creer');
+Router::get('/structure/produits/{id}', 'structure\controllers\ProduitController@detail');
 Router::post('/structure/produits', 'structure\controllers\ProduitController@enregistrer');
 Router::get('/structure/produits/editer/{id}', 'structure\controllers\ProduitController@editer');
 Router::post('/structure/produits/modifier/{id}', 'structure\controllers\ProduitController@mettreAJour');
@@ -84,6 +86,15 @@ Router::post('/structure/clients', 'structure\controllers\ClientController@enreg
 Router::get('/structure/clients/editer/{id}', 'structure\controllers\ClientController@editer');
 Router::post('/structure/clients/modifier/{id}', 'structure\controllers\ClientController@mettreAJour');
 Router::post('/structure/clients/supprimer/{id}', 'structure\controllers\ClientController@supprimer');
+
+// Catégories clients 
+Router::get('/structure/categories-clients', 'structure\controllers\CategorieClientController@index');
+Router::get('/structure/categories-clients/creer', 'structure\controllers\CategorieClientController@creer');
+Router::post('/structure/categories-clients', 'structure\controllers\CategorieClientController@enregistrer');
+Router::get('/structure/categories-clients/{id}', 'structure\controllers\CategorieClientController@detail');
+Router::get('/structure/categories-clients/editer/{id}', 'structure\controllers\CategorieClientController@editer');
+Router::post('/structure/categories-clients/modifier/{id}', 'structure\controllers\CategorieClientController@mettreAJour');
+Router::post('/structure/categories-clients/supprimer/{id}', 'structure\controllers\CategorieClientController@supprimer');
 
 // Banques
 Router::get('/structure/banques', 'structure\controllers\BanqueController@index');
@@ -215,3 +226,8 @@ Router::get('/audit', 'utilisateurs\controllers\AuditController@index');
 Router::get( '/utilisateurs/corbeille',          'utilisateurs\controllers\CorbeilleController@index');
 Router::post('/utilisateurs/corbeille/restaurer','utilisateurs\controllers\CorbeilleController@restaurer');
 Router::post('/utilisateurs/corbeille/purger',   'utilisateurs\controllers\CorbeilleController@purger');
+
+// Corbeille (module Structure)
+Router::get( '/structure/corbeille',          'structure\controllers\CorbeilleController@index');
+Router::post('/structure/corbeille/restaurer','structure\controllers\CorbeilleController@restaurer');
+Router::post('/structure/corbeille/purger',   'structure\controllers\CorbeilleController@purger');

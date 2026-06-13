@@ -89,8 +89,35 @@ class FournisseurController extends Controller
     public function supprimer(int $id): void {
         Auth::verifierDroit('STRUCTURE_SUPPRIMER');
         $this->verifierMethode('POST');
+        // Récupérer l'enregistrement pour archivage
+        $fournisseur = $this->modele->trouverParId($id);
+
+        // Archiver (sans données liées par défaut)
+        \Corbeille::archiver(
+            'fournisseurs',
+            $fournisseur,
+            [],
+            $fournisseur['raison_sociale'] ?? ($fournisseur['code'] ?? '')
+        );
+
         $this->modele->supprimer($id);
-        $_SESSION['succes'] = "Fournisseur supprimé.";
+        $_SESSION['succes'] = "Fournisseur supprimé et déplacé vers la corbeille.";
         $this->redirigerVers('/structure/fournisseurs');
+    }
+
+    public function detail(int $id): void {
+        Auth::verifierDroit('STRUCTURE_LIRE');
+        $fournisseur = $this->modele->trouverParId($id);
+        if (!$fournisseur) {
+            $_SESSION['erreur'] = "Fournisseur introuvable.";
+            $this->redirigerVers('/structure/fournisseurs');
+            return;
+        }
+        $this->rendrePage('structure', 'fournisseurs/detail', [
+            'titre'       => 'Détail fournisseur',
+            'fournisseur' => $fournisseur,
+            'moduleActif' => 'structure',
+            'moduleAssets'=> 'structure',
+        ]);
     }
 }

@@ -8,13 +8,15 @@ class BanqueModel extends Model
     protected string $table = 'banques';
 
     public function listerTout(): array {
-        $sql = "SELECT * FROM banques ORDER BY nom";
-        return $this->bd()->requete($sql)->toutRecuperer();
+        $sql = "SELECT * FROM {$this->table} ORDER BY nom";
+        return $this->pdo()->query($sql)->fetchAll();
     }
 
     public function trouverParId(int $id): array {
-        $sql = "SELECT * FROM banques WHERE id = :id";
-        $res = $this->bd()->requete($sql, [':id' => $id])->unRecuperer();
+        $sql = "SELECT * FROM {$this->table} WHERE id = :id";
+        $stmt = $this->pdo()->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        $res = $stmt->fetch();
         if (!$res) {
             throw new RuntimeException("Enregistrement introuvable dans {$this->table} : id = {$id}");
         }
@@ -22,24 +24,26 @@ class BanqueModel extends Model
     }
 
     public function creer(array $donnees): int {
-        $sql = "INSERT INTO banques (code, nom, adresse, telephone, numero_compte)
+        $sql = "INSERT INTO {$this->table} (code, nom, adresse, telephone, numero_compte)
                 VALUES (:code, :nom, :adresse, :telephone, :numero_compte) RETURNING id";
-        $res = $this->bd()->requete($sql, [
+        $stmt = $this->pdo()->prepare($sql);
+        $stmt->execute([
             ':code'          => $donnees['code'],
             ':nom'           => $donnees['nom'],
             ':adresse'       => $donnees['adresse'] ?? null,
             ':telephone'     => $donnees['telephone'] ?? null,
             ':numero_compte' => $donnees['numero_compte'] ?? null,
-        ])->unRecuperer();
-        return (int)$res['id'];
+        ]);
+        return (int)$this->pdo()->lastInsertId();
     }
 
     public function mettreAJour(int $id, array $donnees): void {
-        $sql = "UPDATE banques SET
+        $sql = "UPDATE {$this->table} SET
                     code = :code, nom = :nom, adresse = :adresse,
                     telephone = :telephone, numero_compte = :numero_compte
                 WHERE id = :id";
-        $this->bd()->requete($sql, [
+        $stmt = $this->pdo()->prepare($sql);
+        $stmt->execute([
             ':id'            => $id,
             ':code'          => $donnees['code'],
             ':nom'           => $donnees['nom'],
@@ -47,10 +51,5 @@ class BanqueModel extends Model
             ':telephone'     => $donnees['telephone'] ?? null,
             ':numero_compte' => $donnees['numero_compte'] ?? null,
         ]);
-    }
-
-    public function supprimer(int $id): void {
-        $sql = "DELETE FROM banques WHERE id = :id";
-        $this->bd()->requete($sql, [':id' => $id]);
     }
 }

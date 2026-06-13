@@ -5,10 +5,12 @@ namespace structure\controllers;
 
 require_once ROOT . '/core/Controller.php';
 require_once ROOT . '/core/Auth.php';
+require_once ROOT . '/core/Corbeille.php';
 require_once ROOT . '/modules/structure/models/FamilleModel.php';
 
 use Controller;
 use Auth;
+use Corbeille;
 use FamilleModel;
 
 class FamilleController extends Controller
@@ -80,11 +82,51 @@ class FamilleController extends Controller
         $this->redirigerVers('/structure/familles');
     }
 
+    /**
+     * Supprime une famille et archive TOUS les produits liés
+     */
     public function supprimer(int $id): void {
         Auth::verifierDroit('STRUCTURE_SUPPRIMER');
         $this->verifierMethode('POST');
+        
+        // Récupérer la famille
+        $famille = $this->modele->trouverParId($id);
+        
+        // Récupérer TOUS les produits de cette famille avec TOUS leurs champs
+        $sqlProduits = "SELECT p.*, pp.code AS produit_pere_code 
+                        FROM produits p
+                        LEFT JOIN produits pp ON pp.id = p.produit_pere_id
+                        WHERE p.famille_id = :id";
+        $produits = \Database::query($sqlProduits, [':id' => $id])->fetchAll();
+        
+        // Archiver la famille avec les produits (simplement comme tableau de produits)
+        Corbeille::archiver(
+            'familles_produits',
+            $famille,
+            ['produits' => $produits],  // ← clé simple, pas de structure imbriquée
+            $famille['libelle']
+        );
+        
+        // La suppression en base se fait avec ON DELETE CASCADE
         $this->modele->supprimer($id);
-        $_SESSION['succes'] = "Famille supprimée (ON DELETE CASCADE).";
+        
+        $_SESSION['succes'] = "Famille et ses " . count($produits) . " produit(s) supprimés et déplacés vers la corbeille.";
         $this->redirigerVers('/structure/familles');
+    }
+
+    public function detail(int $id): void {
+        Auth::verifierDroit('STRUCTURE_LIRE');
+        $famille = $this->modele->trouverParId($id);
+        if (!$famille) {
+            $_SESSION['erreur'] = "Famille introuvable.";
+            $this->redirigerVers('/structure/familles');
+            return;
+        }
+        $this->rendrePage('structure', 'familles/detail', [
+            'titre'       => 'Détail famille',
+            'famille'     => $famille,
+            'moduleActif' => 'structure',
+            'moduleAssets'=> 'structure',
+        ]);
     }
 }

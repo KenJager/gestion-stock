@@ -5,15 +5,17 @@ namespace structure\controllers;
 
 require_once ROOT . '/core/Controller.php';
 require_once ROOT . '/core/Auth.php';
+require_once ROOT . '/core/Corbeille.php';
 require_once ROOT . '/modules/structure/models/ProduitModel.php';
 require_once ROOT . '/modules/structure/models/FamilleModel.php';
 require_once ROOT . '/modules/structure/services/ProduitService.php';
 
 use Controller;
 use Auth;
+use Corbeille;
 use ProduitModel;
 use FamilleModel;
-use ProduitService;
+use structure\services\ProduitService;
 
 class ProduitController extends Controller
 {
@@ -41,31 +43,95 @@ class ProduitController extends Controller
 
     public function creer(): void {
         Auth::verifierDroit('STRUCTURE_CREER');
-        $familles = $this->familleModel->listerTout();
+        $familles     = $this->familleModel->listerTout();
+        $produitsPeres = $this->produitModel->listerProduitsPeres();
         $this->rendrePage('structure', 'produits/formulaire', [
-            'titre'       => 'Nouveau produit',
-            'produit'     => null,
-            'familles'    => $familles,
-            'moduleActif' => 'structure',
-            'moduleAssets'=> 'structure',
+            'titre'        => 'Nouveau produit',
+            'produit'      => null,
+            'familles'     => $familles,
+            'produitsPeres'=> $produitsPeres,
+            'etape'        => (int)($_GET['etape'] ?? 1),
+            'moduleActif'  => 'structure',
+            'moduleAssets' => 'structure',
         ]);
     }
 
     public function enregistrer(): void {
         Auth::verifierDroit('STRUCTURE_CREER');
         $this->verifierMethode('POST');
-        $donnees = $this->nettoyerPost([
-            'code', 'designation', 'famille_id', 'unite',
-            'prix_achat_ht', 'prix_vente_ht', 'tva',
-            'stock_actuel', 'stock_minimum', 'date_peremption', 'actif'
-        ]);
-        if (empty($donnees['code']) || empty($donnees['designation']) || empty($donnees['famille_id'])) {
-            $_SESSION['erreur'] = "Code, désignation et famille sont obligatoires.";
+
+        if (isset($_POST['etape']) && (int)$_POST['etape'] === 1) {
+            $donnees = $this->nettoyerPost([
+                'code', 'designation', 'famille_id', 'unite', 'est_pere'
+            ]);
+            if (empty($donnees['code']) || empty($donnees['designation']) || empty($donnees['famille_id'])) {
+                $_SESSION['erreur'] = "Code, désignation et famille sont obligatoires.";
+                $this->redirigerVers('/structure/produits/creer');
+                return;
+            }
+            if ($this->produitModel->existeParCode($donnees['code'])) {
+                $_SESSION['erreur'] = "Ce code produit est déjà utilisé.";
+                $this->redirigerVers('/structure/produits/creer');
+                return;
+            }
+            $_SESSION['produit_etape1'] = $donnees;
+
+            $familles      = $this->familleModel->listerTout();
+            $produitsPeres = $this->produitModel->listerProduitsPeres();
+            $this->rendrePage('structure', 'produits/formulaire', [
+                'titre'        => 'Nouveau produit — Étape 2 / 2',
+                'produit'      => null,
+                'familles'     => $familles,
+                'produitsPeres'=> $produitsPeres,
+                'etape'        => 2,
+                'etape1'       => $donnees,
+                'moduleActif'  => 'structure',
+                'moduleAssets' => 'structure',
+            ]);
+            return;
+        }
+
+        $etape1 = $_SESSION['produit_etape1'] ?? [];
+        if (empty($etape1)) {
+            $_SESSION['erreur'] = "Session expirée. Veuillez recommencer.";
             $this->redirigerVers('/structure/produits/creer');
             return;
         }
-        $this->produitModel->creer($donnees);
-        $_SESSION['succes'] = "Produit créé.";
+
+        $etape2 = $this->nettoyerPost([
+            'prix_achat_ht', 'prix_vente_ht', 'tva',
+            'stock_actuel', 'stock_minimum', 'date_peremption', 'actif',
+        ]);
+
+        $donnees = array_merge($etape1, $etape2);
+        
+        // ✅ Récupérer les données du formulaire (produit_pere_id et quantite_fils)
+        $produitPereId = isset($_POST['produit_pere_id']) && !empty($_POST['produit_pere_id']) 
+                        ? (int)$_POST['produit_pere_id'] 
+                        : null;
+        $quantiteFils = isset($_POST['quantite_fils']) && !empty($_POST['quantite_fils']) 
+                    ? (float)$_POST['quantite_fils'] 
+                    : 1;
+        
+        // Créer le produit
+        $nouveauId = $this->produitModel->creer($donnees);
+        
+        // ✅ Si c'est un produit fils (produit_pere_id sélectionné et pas un père)
+        $estFils = $produitPereId !== null && ($donnees['est_pere'] != 1);
+        
+        if ($estFils) {
+            // Créer l'entrée dans fractions_produit
+            $sqlFraction = "INSERT INTO fractions_produit (produit_pere_id, produit_fils_id, quantite_fils)
+                            VALUES (:pere_id, :fils_id, :quantite)";
+            \Database::query($sqlFraction, [
+                ':pere_id' => $produitPereId,
+                ':fils_id' => $nouveauId,
+                ':quantite' => $quantiteFils,
+            ]);
+        }
+        
+        unset($_SESSION['produit_etape1']);
+        $_SESSION['succes'] = "Produit créé avec succès.";
         $this->redirigerVers('/structure/produits');
     }
 
@@ -77,13 +143,16 @@ class ProduitController extends Controller
             $this->redirigerVers('/structure/produits');
             return;
         }
-        $familles = $this->familleModel->listerTout();
+        $familles      = $this->familleModel->listerTout();
+        $produitsPeres = $this->produitModel->listerProduitsPeres();
         $this->rendrePage('structure', 'produits/formulaire', [
-            'titre'       => 'Modifier le produit',
-            'produit'     => $produit,
-            'familles'    => $familles,
-            'moduleActif' => 'structure',
-            'moduleAssets'=> 'structure',
+            'titre'        => 'Modifier le produit',
+            'produit'      => $produit,
+            'familles'     => $familles,
+            'produitsPeres'=> $produitsPeres,
+            'etape'        => null,
+            'moduleActif'  => 'structure',
+            'moduleAssets' => 'structure',
         ]);
     }
 
@@ -93,22 +162,74 @@ class ProduitController extends Controller
         $donnees = $this->nettoyerPost([
             'code', 'designation', 'famille_id', 'unite',
             'prix_achat_ht', 'prix_vente_ht', 'tva',
-            'stock_actuel', 'stock_minimum', 'date_peremption', 'actif'
+            'stock_actuel', 'stock_minimum', 'date_peremption', 'actif',
         ]);
         $this->produitModel->mettreAJour($id, $donnees);
         $_SESSION['succes'] = "Produit modifié.";
         $this->redirigerVers('/structure/produits');
     }
 
+    // ── Suppression avec archivage en corbeille (père + fils) ───────────────
     public function supprimer(int $id): void {
         Auth::verifierDroit('STRUCTURE_SUPPRIMER');
         $this->verifierMethode('POST');
+
+        $produit = $this->produitModel->trouverParId($id);
+        if (!$produit) {
+            $_SESSION['erreur'] = "Produit introuvable.";
+            $this->redirigerVers('/structure/produits');
+            return;
+        }
+
+        $liees = [];
+
+        // Récupérer les produits fils (via fractions_produit)
+        $fils = $this->produitModel->listerFilsParProduitPere($id);
+        
+        if (!empty($fils)) {
+            $liees['produits_fils'] = [];
+            
+            foreach ($fils as $filsProduit) {
+                // Archiver le produit fils
+                Corbeille::archiver(
+                    'produits',
+                    $filsProduit,
+                    [],
+                    $filsProduit['code'] . ' — ' . $filsProduit['designation']
+                );
+                $liees['produits_fils'][] = $filsProduit;
+            }
+        }
+
+        // Récupérer les fractions du produit père
+        $sqlFractions = "SELECT * FROM fractions_produit WHERE produit_pere_id = :id";
+        $fractions = \Database::query($sqlFractions, [':id' => $id])->fetchAll();
+        if (!empty($fractions)) {
+            $liees['fractions_produit'] = $fractions;
+        }
+
+        // Archiver le produit père
+        Corbeille::archiver(
+            'produits',
+            $produit,
+            $liees,
+            $produit['code'] . ' — ' . $produit['designation']
+        );
+
+        // Supprimer les produits fils
+        if (!empty($fils)) {
+            foreach ($fils as $filsProduit) {
+                $this->produitModel->supprimer($filsProduit['id']);
+            }
+        }
+
+        // Supprimer le produit père
         $this->produitModel->supprimer($id);
-        $_SESSION['succes'] = "Produit supprimé.";
+        
+        $_SESSION['succes'] = "Produit père et ses " . count($fils) . " fils supprimés et archivés.";
         $this->redirigerVers('/structure/produits');
     }
 
-    // Afficher le formulaire de fractionnement d'un produit père
     public function fractionner(int $id): void {
         Auth::verifierDroit('STRUCTURE_CREER');
         $produitPere = $this->produitModel->trouverParId($id);
@@ -137,7 +258,6 @@ class ProduitController extends Controller
             return;
         }
 
-        // Récupérer les lignes de fils depuis POST (tableau dynamique)
         $fils = [];
         $index = 0;
         while (isset($_POST["fils_code_{$index}"])) {
@@ -168,9 +288,31 @@ class ProduitController extends Controller
                 'tva'         => $produitPere['tva'],
             ], $fils);
             $_SESSION['succes'] = "Fractionnement enregistré avec succès.";
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $_SESSION['erreur'] = "Erreur : " . $e->getMessage();
         }
         $this->redirigerVers('/structure/produits');
+    }
+
+    public function detail(string|int $id): void {
+        Auth::verifierDroit('STRUCTURE_LIRE');
+        $id = (int)$id;
+        $produit = $this->produitModel->trouverParId($id);
+        if (!$produit) {
+            $_SESSION['erreur'] = "Produit introuvable.";
+            $this->redirigerVers('/structure/produits');
+            return;
+        }
+        $fractions = [];
+        if ($produit['est_pere']) {
+            $fractions = $this->produitModel->listerFilsParProduitPere($id);
+        }
+        $this->rendrePage('structure', 'produits/detail', [
+            'titre'       => 'Détail produit',
+            'produit'     => $produit,
+            'fractions'   => $fractions,
+            'moduleActif' => 'structure',
+            'moduleAssets'=> 'structure',
+        ]);
     }
 }

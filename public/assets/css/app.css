@@ -453,8 +453,26 @@ body {
     font-size: 12px;
 }
 
-.btn-icon {
+/* .btn-icon {
     padding: 8px;
+} */
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: var(--radius);
+    transition: all 0.15s;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+}
+
+.btn-icon:hover {
+    background-color: var(--secondary);
 }
 
 /* Formulaires */
@@ -639,6 +657,7 @@ body {
 .mb-1 { margin-bottom: 4px; }
 .mb-2 { margin-bottom: 8px; }
 .mb-4 { margin-bottom: 16px; }
+.p-3 { padding: 8px; }
 .p-4 { padding: 16px; }
 .p-6 { padding: 24px; }
 .gap-2 { gap: 8px; }

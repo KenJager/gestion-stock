@@ -20,9 +20,9 @@ $methode = $famille ? "POST" : "POST";
                 <label class="label">Description</label>
                 <textarea name="description" class="input" rows="3"><?= htmlspecialchars($famille['description'] ?? '') ?></textarea>
             </div>
-            <div class="flex justify-end gap-2">
-                <a href="<?= BASE_URL ?>/structure/familles" class="btn-secondary">Annuler</a>
-                <button type="submit" class="btn-primary">Enregistrer</button>
+            <div class="flex justify-end gap-2 mt-4">
+                <a href="<?= BASE_URL ?>/structure/familles" class="btn btn-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
             </div>
         </div>
     </form>

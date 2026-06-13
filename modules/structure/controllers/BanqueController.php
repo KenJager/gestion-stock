@@ -87,8 +87,22 @@ class BanqueController extends Controller
     public function supprimer(int $id): void {
         Auth::verifierDroit('STRUCTURE_SUPPRIMER');
         $this->verifierMethode('POST');
+        // Récupérer l'enregistrement pour archivage
+        $banque = $this->modele->trouverParId($id);
+
+        // Récupérer les versements liés pour archivage
+        $sql = "SELECT * FROM versements_banque WHERE banque_id = :id";
+        $versements = \Database::query($sql, [':id' => $id])->fetchAll();
+
+        \Corbeille::archiver(
+            'banques',
+            $banque,
+            ['versements' => $versements],
+            $banque['nom']
+        );
+
         $this->modele->supprimer($id);
-        $_SESSION['succes'] = "Banque supprimée.";
+        $_SESSION['succes'] = "Banque supprimée et déplacée vers la corbeille.";
         $this->redirigerVers('/structure/banques');
     }
 }

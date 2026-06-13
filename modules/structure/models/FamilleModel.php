@@ -9,12 +9,14 @@ class FamilleModel extends Model
 
     public function listerTout(): array {
         $sql = "SELECT * FROM {$this->table} ORDER BY libelle";
-        return $this->bd()->requete($sql)->toutRecuperer();
+        return $this->pdo()->query($sql)->fetchAll();
     }
 
     public function trouverParId(int $id): array {
         $sql = "SELECT * FROM {$this->table} WHERE id = :id";
-        $res = $this->bd()->requete($sql, [':id' => $id])->unRecuperer();
+        $stmt = $this->pdo()->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        $res = $stmt->fetch();
         if (!$res) {
             throw new RuntimeException("Enregistrement introuvable dans {$this->table} : id = {$id}");
         }
@@ -24,27 +26,24 @@ class FamilleModel extends Model
     public function creer(array $donnees): int {
         $sql = "INSERT INTO {$this->table} (code, libelle, description)
                 VALUES (:code, :libelle, :description) RETURNING id";
-        $res = $this->bd()->requete($sql, [
+        $stmt = $this->pdo()->prepare($sql);
+        $stmt->execute([
             ':code'        => $donnees['code'],
             ':libelle'     => $donnees['libelle'],
             ':description' => $donnees['description'] ?? null,
-        ])->unRecuperer();
-        return (int)$res['id'];
+        ]);
+        return (int)$this->pdo()->lastInsertId();
     }
 
     public function mettreAJour(int $id, array $donnees): void {
         $sql = "UPDATE {$this->table} SET code = :code, libelle = :libelle,
                 description = :description WHERE id = :id";
-        $this->bd()->requete($sql, [
+        $stmt = $this->pdo()->prepare($sql);
+        $stmt->execute([
             ':id'          => $id,
             ':code'        => $donnees['code'],
             ':libelle'     => $donnees['libelle'],
             ':description' => $donnees['description'] ?? null,
         ]);
-    }
-
-    public function supprimer(int $id): void {
-        $sql = "DELETE FROM {$this->table} WHERE id = :id";
-        $this->bd()->requete($sql, [':id' => $id]);
     }
 }

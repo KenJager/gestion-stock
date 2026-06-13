@@ -97,8 +97,35 @@ class ClientController extends Controller
     public function supprimer(int $id): void {
         Auth::verifierDroit('STRUCTURE_SUPPRIMER');
         $this->verifierMethode('POST');
+        // Récupérer l'enregistrement pour archivage
+        $client = $this->clientModel->trouverParId($id);
+
+        // Archiver (sans données liées par défaut)
+        \Corbeille::archiver(
+            'clients',
+            $client,
+            [],
+            $client['raison_sociale'] ?? ($client['code'] ?? '')
+        );
+
         $this->clientModel->supprimer($id);
-        $_SESSION['succes'] = "Client supprimé.";
+        $_SESSION['succes'] = "Client supprimé et déplacé vers la corbeille.";
         $this->redirigerVers('/structure/clients');
+    }
+
+    public function detail(int $id): void {
+        Auth::verifierDroit('STRUCTURE_LIRE');
+        $client = $this->clientModel->trouverAvecCategorie($id);
+        if (!$client) {
+            $_SESSION['erreur'] = "Client introuvable.";
+            $this->redirigerVers('/structure/clients');
+            return;
+        }
+        $this->rendrePage('structure', 'clients/detail', [
+            'titre'       => 'Détail client',
+            'client'      => $client,
+            'moduleActif' => 'structure',
+            'moduleAssets'=> 'structure',
+        ]);
     }
 }
