@@ -1,169 +1,273 @@
--- =============================================================================
--- SCRIPT DE SEED DATA - COMPLET (UTILISATEURS & STRUCTURE)
--- Base de données : PostgreSQL (Basé sur sql-new.sql & admin_account.sql)
--- =============================================================================
+-- ============================================================================
+-- SCRIPT COMPLET D'INITIALISATION - 4 GROUPES UNIQUEMENT
+-- ============================================================================
 
 BEGIN;
 
--- Désactivation temporaire des triggers pour éviter les blocages de clés étrangères lors du nettoyage
-SET CONSTRAINTS ALL DEFERRED;
+-- ============================================================================
+-- 1. CRÉATION DES GROUPES (4 groupes uniquement)
+-- ============================================================================
 
--- Nettoyage complet des tables pour travailler sur des données propres
-TRUNCATE public.versements_banque, public.fractions_produit, public.produits, 
-         public.familles_produits, public.clients, public.categories_clients, 
-         public.fournisseurs, public.banques, public.groupes_droits, 
-         public.utilisateurs, public.groupes_utilisateurs, public.droits 
-         RESTART IDENTITY CASCADE;
+INSERT INTO public.groupes_utilisateurs (nom, description) VALUES
+('ADMINISTRATEURS', 'Super administrateur - tous droits d''accès'),
+('VENDEURS', 'Personnel affecté au comptoir et suivi client'),
+('LOGISTICIENS', 'Gestionnaires de stock et des approvisionnements'),
+('COMPTABILITE', 'Gestion des factures et règlements')
+ON CONFLICT (nom) DO NOTHING;
 
--- =============================================================================
--- 1. CONFIGURATION DU MODULE UTILISATEURS & DROITS (admin_account.sql)
--- =============================================================================
+-- ============================================================================
+-- 2. CRÉATION DES UTILISATEURS
+-- ============================================================================
 
--- Injection des droits d'accès standard
+INSERT INTO public.utilisateurs (nom, prenom, login, mot_de_passe, email, groupe_id, actif) VALUES
+('SALIH', 'Ken', 'admin', '$2a$10$Fsad3QmJoKQgBYoXku0IR.gkoLAI4VV.4OUOKsFQwtQFvQQ2cPsce', 'k.admin@stock.cm', 
+    (SELECT id FROM public.groupes_utilisateurs WHERE nom = 'ADMINISTRATEURS'), true),
+('FOKOU', 'Marie', 'vendeur', '$2a$10$Fsad3QmJoKQgBYoXku0IR.gkoLAI4VV.4OUOKsFQwtQFvQQ2cPsce', 'm.fokou@stock.cm', 
+    (SELECT id FROM public.groupes_utilisateurs WHERE nom = 'VENDEURS'), true),
+('KAMGA', 'Jean', 'logis', '$2a$10$Fsad3QmJoKQgBYoXku0IR.gkoLAI4VV.4OUOKsFQwtQFvQQ2cPsce', 'j.kamga@stock.cm', 
+    (SELECT id FROM public.groupes_utilisateurs WHERE nom = 'LOGISTICIENS'), true),
+('NDONGMO', 'Claire', 'compta', '$2a$10$Fsad3QmJoKQgBYoXku0IR.gkoLAI4VV.4OUOKsFQwtQFvQQ2cPsce', 'c.ndongmo@stock.cm', 
+    (SELECT id FROM public.groupes_utilisateurs WHERE nom = 'COMPTABILITE'), true)
+ON CONFLICT (login) DO NOTHING;
+
+-- ============================================================================
+-- 3. CRÉATION DES DROITS (4 modules)
+-- ============================================================================
+
 INSERT INTO public.droits (code, module, description) VALUES
+-- Module STRUCTURE
+('STRUCTURE_LIRE', 'STRUCTURE', 'Consulter les référentiels de base'),
+('STRUCTURE_CREER', 'STRUCTURE', 'Créer des entités'),
+('STRUCTURE_MODIFIER', 'STRUCTURE', 'Modifier des entités'),
+('STRUCTURE_SUPPRIMER', 'STRUCTURE', 'Supprimer des entités'),
+-- Module VENTES
+('VENTE_LIRE', 'VENTES', 'Consulter les ventes'),
+('VENTE_CREER', 'VENTES', 'Créer des ventes et factures clients'),
+('VENTE_MODIFIER', 'VENTES', 'Modifier des ventes'),
+('VENTE_SUPPRIMER', 'VENTES', 'Supprimer des documents de vente'),
+-- Module APPROVISIONNEMENTS
 ('APPRO_LIRE', 'APPROVISIONNEMENTS', 'Consulter les approvisionnements'),
-('APPRO_CREER', 'APPROVISIONNEMENTS', 'Créer bons de commande, réceptions, factures fournisseurs'),
-('APPRO_MODIFIER', 'APPROVISIONNEMENTS', 'Modifier les documents d''approvisionnement'),
-('APPRO_SUPRIMMER', 'APPROVISIONNEMENTS', 'Supprimer des documents (cascade)'),
-('STRUCTURE_LIRE', 'STRUCTURE', 'Consulter les référentiels'),
-('STRUCTURE_CREER', 'STRUCTURE', 'Créer des entités (famille, produit, fournisseur, client, banque)'),
-('STRUCTURE_MODIFIER', 'STRUCTURE', 'Modifier les entités'),
-('STRUCTURE_SUPRIMMER', 'STRUCTURE', 'Supprimer des entités (cascade)'),
+('APPRO_CREER', 'APPROVISIONNEMENTS', 'Créer des bons de commande fournisseur'),
+('APPRO_MODIFIER', 'APPROVISIONNEMENTS', 'Modifier des commandes fournisseur'),
+('APPRO_SUPPRIMER', 'APPROVISIONNEMENTS', 'Supprimer des documents d''approvisionnement'),
+-- Module STOCK
+('STOCK_LIRE', 'STOCK', 'Consulter les mouvements de stock'),
+('STOCK_ENTREE', 'STOCK', 'Gérer les entrées de stock'),
+('STOCK_SORTIE', 'STOCK', 'Gérer les sorties de stock'),
+('STOCK_INVENTAIRE', 'STOCK', 'Réaliser des inventaires'),
+-- Module COMPTABILITE
+('COMPTA_LIRE', 'COMPTABILITE', 'Consulter la comptabilité'),
+('COMPTA_VALIDER', 'COMPTABILITE', 'Valider les écritures comptables'),
+('COMPTA_ECRITURE', 'COMPTABILITE', 'Créer des écritures manuelles'),
+-- Module UTILISATEURS
 ('USERS_LIRE', 'UTILISATEURS', 'Consulter les utilisateurs et groupes'),
 ('USERS_CREER', 'UTILISATEURS', 'Créer des utilisateurs / groupes'),
 ('USERS_MODIFIER', 'UTILISATEURS', 'Modifier utilisateurs / groupes'),
-('USERS_SUPRIMMER', 'UTILISATEURS', 'Supprimer utilisateurs / groupes'),
-('AUDIT_LIRE', 'UTILISATEURS', 'Consulter les logs d''audit'),
-('VENTE_LIRE', 'VENTES', 'Consulter les ventes'),
-('VENTE_CREER', 'VENTES', 'Créer commandes clients, factures, ventes comptant'),
-('VENTE_MODIFIER', 'VENTES', 'Modifier les documents de vente'),
-('VENTE_SUPRIMMER', 'VENTES', 'Supprimer des documents de vente (cascade)');
+('USERS_SUPPRIMER', 'UTILISATEURS', 'Supprimer utilisateurs / groupes'),
+('AUDIT_LIRE', 'UTILISATEURS', 'Consulter les logs d''audit')
+ON CONFLICT (code) DO NOTHING;
 
--- Création du groupe Administrateurs
-INSERT INTO public.groupes_utilisateurs (nom, description) 
-VALUES ('ADMINISTRATEURS', 'Super administrateur - tous droits');
+-- ============================================================================
+-- 4. ASSOCIATION DES DROITS AUX GROUPES
+-- ============================================================================
 
--- Association de tous les privilèges applicatifs au groupe admin
+-- ADMINISTRATEURS : TOUS les droits
 INSERT INTO public.groupes_droits (groupe_id, droit_id)
-SELECT (SELECT id FROM public.groupes_utilisateurs WHERE nom = 'ADMINISTRATEURS'), id FROM public.droits;
+SELECT g.id, d.id
+FROM public.groupes_utilisateurs g
+CROSS JOIN public.droits d
+WHERE g.nom = 'ADMINISTRATEURS'
+ON CONFLICT (groupe_id, droit_id) DO NOTHING;
 
--- Création du compte utilisateur Administrateur ('admin' / 'admin123')
-INSERT INTO public.utilisateurs (nom, prenom, login, mot_de_passe, email, groupe_id, actif)
-VALUES (
-    'Admin', 
-    'Système', 
-    'admin', 
-    '$2y$10$mC.vXW3.U6CqUdfV5C8VDeR3f6yG9LOnF0B1W3P6S8bK9W7X2gEqS', -- Hash Bcrypt standard pour le mot de passe 'admin123'
-    'admin@gestion-stock.local', 
-    (SELECT id FROM public.groupes_utilisateurs WHERE nom = 'ADMINISTRATEURS'), 
-    true
-);
+-- VENDEURS : Ventes + Lecture stock + Lecture structure
+INSERT INTO public.groupes_droits (groupe_id, droit_id)
+SELECT g.id, d.id
+FROM public.groupes_utilisateurs g
+CROSS JOIN public.droits d
+WHERE g.nom = 'VENDEURS' 
+  AND d.code IN ('STRUCTURE_LIRE', 'VENTE_LIRE', 'VENTE_CREER', 'VENTE_MODIFIER', 'VENTE_SUPPRIMER', 'STOCK_LIRE')
+ON CONFLICT (groupe_id, droit_id) DO NOTHING;
 
+-- LOGISTICIENS : Approvisionnements + Stock (entrée/sortie) + Lecture structure
+INSERT INTO public.groupes_droits (groupe_id, droit_id)
+SELECT g.id, d.id
+FROM public.groupes_utilisateurs g
+CROSS JOIN public.droits d
+WHERE g.nom = 'LOGISTICIENS' 
+  AND d.code IN ('STRUCTURE_LIRE', 'APPRO_LIRE', 'APPRO_CREER', 'APPRO_MODIFIER', 'APPRO_SUPPRIMER', 'STOCK_LIRE', 'STOCK_ENTREE', 'STOCK_SORTIE', 'STOCK_INVENTAIRE')
+ON CONFLICT (groupe_id, droit_id) DO NOTHING;
 
--- =============================================================================
--- 2. RÉFÉRENTIELS LOGISTIQUES & FINANCIERS (Banques & Fournisseurs)
--- =============================================================================
+-- COMPTABILITE : Lecture seule (tous modules) + Validation comptable
+INSERT INTO public.groupes_droits (groupe_id, droit_id)
+SELECT g.id, d.id
+FROM public.groupes_utilisateurs g
+CROSS JOIN public.droits d
+WHERE g.nom = 'COMPTABILITE' 
+  AND d.code IN ('STRUCTURE_LIRE', 'VENTE_LIRE', 'APPRO_LIRE', 'STOCK_LIRE', 'COMPTA_LIRE', 'COMPTA_VALIDER', 'USERS_LIRE', 'AUDIT_LIRE')
+ON CONFLICT (groupe_id, droit_id) DO NOTHING;
 
--- Banques de l'entreprise
+-- ============================================================================
+-- 5. BANQUES
+-- ============================================================================
+
 INSERT INTO public.banques (code, nom, adresse, telephone, numero_compte) VALUES
-('AFT-01', 'Afriland First Bank', 'Place de l''Indépendance, Yaoundé', '+237 222 22 17 77', 'CM21-10005-00089-45612378902-89'),
-('SGC-02', 'Société Générale Cameroun', 'Boulevard de la Liberté, Douala', '+237 233 43 00 00', 'CM21-10003-00012-98765432109-12'),
-('BIC-03', 'BICEC Cameroun', 'Avenue Charles de Gaulle, Yaoundé', '+237 222 23 45 67', 'CM21-10001-00045-12345678901-45');
+('AFRILAND', 'Afriland First Bank', 'Place de l''Indépendance, Yaoundé', '+237 222 23 30 68', '10005-00001-12345678901-45'),
+('BICEC', 'BICEC Cameroun', 'Avenue Général de Gaulle, Douala', '+237 233 43 60 00', '10001-00002-98765432109-88'),
+('SCB', 'Société Camerounaise de Banque', 'Boulevard du 20 Mai, Yaoundé', '+237 222 22 44 55', '10004-00003-45678912301-12'),
+('UBA', 'United Bank for Africa', 'Rue Joffre, Douala', '+237 233 42 58 00', '10005-00004-78912345601-33')
+ON CONFLICT (code) DO NOTHING;
 
--- Fournisseurs de marchandises
-INSERT INTO public.fournisseurs (code, nom, rccm, niu, adresse, telephone, email, solde_initial) VALUES
-('FOU-SABC', 'SOCIETE DES BRASSERIES DU CAMEROUN (SABC)', 'RC/DLA/1948/B/210', 'M014800000123A', 'Rue Ndokoti, Douala', '+237 233 41 55 55', 'contact@sabc-cm.com', 0.00),
-('FOU-NESTLE', 'NESTLE CAMEROUN S.A.', 'RC/DLA/1965/B/950', 'M056500000456B', 'Zone Industrielle de Bassa, Douala', '+237 233 42 67 89', 'appro@cm.nestle.com', 150000.00),
-('FOU-GLOBAL', 'DISTRIBUTEUR GLOBAL SARL', 'RC/YAO/2015/B/4510', 'M091500001789C', 'Marché Central, Yaoundé', '+237 222 21 02 03', 'commercial@global-sarl.cm', 0.00);
+-- ============================================================================
+-- 6. CATÉGORIES CLIENTS
+-- ============================================================================
 
+INSERT INTO public.categories_clients (code, libelle, remise_pct, description) VALUES
+('GROSSISTE', 'Clients Grossistes / Revendeurs', 10.00, 'Acheteurs en grande quantité, remise de 10%'),
+('DETAIL', 'Clients de détail', 0.00, 'Acheteurs standards au comptoir'),
+('PARTENAIRE', 'Partenaires privilégiés', 15.00, 'Partenaires commerciaux avec remise exceptionnelle'),
+('ETAT', 'Administrations publiques', 0.00, 'Services de l''État et collectivités')
+ON CONFLICT (code) DO NOTHING;
 
--- =============================================================================
--- 3. SEGMENTATION & RÉFÉRENTIEL CLIENTS (categories_clients & clients)
--- =============================================================================
+-- ============================================================================
+-- 7. CLIENTS
+-- ============================================================================
 
--- Catégories de clients (Typologie tarifaire ou commerciale)
-INSERT INTO public.categories_clients (code, libelle, description) VALUES
-('CAT-COMPT', 'Client Comptant / Passant', 'Vente directe au comptoir sans ligne de crédit ouverte'),
-('CAT-GROS', 'Grossistes & Distributeurs', 'Achat en gros volume avec conditions de crédit préférentielles'),
-('CAT-VIP', 'Clients Institutionnels / VIP', 'Grands comptes d''entreprises ou partenariats récurrents');
+INSERT INTO public.clients (code, raison_sociale, contact, telephone, email, adresse, ville, pays, categorie_id, actif) VALUES
+('CLI-001', 'Établissements FOUMAN & Fils', 'M. Fouman Pierre', '+237 677 11 22 33', 'contact@fouman.cm', 'Marché Central', 'Yaoundé', 'Cameroun', 
+    (SELECT id FROM public.categories_clients WHERE code = 'GROSSISTE'), true),
+('CLI-002', 'SOCIETE NOUVELLE DE DISTRIBUTION', 'Mme. Etoa Alice', '+237 699 44 55 66', 'etoa@snd.cm', 'Akwa', 'Douala', 'Cameroun', 
+    (SELECT id FROM public.categories_clients WHERE code = 'GROSSISTE'), true),
+('CLI-003', 'Client Comptoir Standard', 'Anonyme', NULL, NULL, 'Bafoussam Centre', 'Bafoussam', 'Cameroun', 
+    (SELECT id FROM public.categories_clients WHERE code = 'DETAIL'), true),
+('CLI-004', 'SUPERMARCHE DE MFOUNDI', 'M. Ndi Marc', '+237 677 88 99 00', 'contact@supermarchemfoundi.cm', 'Mfoundi, Yaoundé', 'Yaoundé', 'Cameroun', 
+    (SELECT id FROM public.categories_clients WHERE code = 'GROSSISTE'), true),
+('CLI-005', 'HOPITAL CENTRAL DE YAOUNDE', 'Dr. Mbarga', '+237 222 23 45 67', 'achats@hcy.cm', 'Hôpital Central', 'Yaoundé', 'Cameroun', 
+    (SELECT id FROM public.categories_clients WHERE code = 'ETAT'), true),
+('CLI-006', 'PARTENAIRE Sarl', 'M. Essomba', '+237 655 44 33 22', 'contact@partenaire.cm', 'Bastos', 'Yaoundé', 'Cameroun', 
+    (SELECT id FROM public.categories_clients WHERE code = 'PARTENAIRE'), true)
+ON CONFLICT (code) DO NOTHING;
 
--- Clients
-INSERT INTO public.clients (code, nom, categorie_client_id, niu, adresse, telephone, email, plafond_credit, solde_initial) VALUES
-('CLI-COMPTANT', 'CLIENT COMPTANT', (SELECT id FROM public.categories_clients WHERE code = 'CAT-COMPT'), NULL, 'Boutique / Comptoir', NULL, NULL, 0.00, 0.00),
-('CLI-TOGO', 'ETS TOGO ET FRERES', (SELECT id FROM public.categories_clients WHERE code = 'CAT-GROS'), 'M021400034561X', 'Mvan, Yaoundé', '+237 677 88 99 00', 'togo.freres@yahoo.fr', 750000.00, 25000.00),
-('CLI-CENTRE', 'SUPERMARCHE DU CENTRE', (SELECT id FROM public.categories_clients WHERE code = 'CAT-VIP'), 'M089500012478Y', 'Chambre d''agriculture, Yaoundé', '+237 699 55 44 33', 'direction@sm-centre.cm', 2000000.00, 0.00);
+-- ============================================================================
+-- 8. FOURNISSEURS
+-- ============================================================================
 
+INSERT INTO public.fournisseurs (code, raison_sociale, contact, telephone, email, adresse, ville, pays, actif) VALUES
+('FOUR-001', 'CAMLAIT S.A.', 'Service Commercial', '+237 233 42 43 44', 'commandes@camlait.cm', 'Zone Industrielle Bassa', 'Douala', 'Cameroun', true),
+('FOUR-002', 'CHOCOCAM', 'Direction des ventes', '+237 233 37 01 00', 'sales@chococam.cm', 'Quartier Ndokoti', 'Douala', 'Cameroun', true),
+('FOUR-003', 'BOLLORE LOGISTICS', 'Service Clients', '+237 233 43 11 11', 'douala@bollore.com', 'Quai de l''Ouest', 'Douala', 'Cameroun', true),
+('FOUR-004', 'BRASSERIES DU CAMEROUN', 'Commercial', '+237 233 45 67 89', 'commandes@brasseries.cm', 'Route de Bonabéri', 'Douala', 'Cameroun', true),
+('FOUR-005', 'NESTLE CAMEROUN', 'Service Client', '+237 222 21 11 11', 'nestle@nestle.cm', 'Boulevard de la Liberté', 'Douala', 'Cameroun', true),
+('FOUR-006', 'SABC (S.A. Brasseries)', 'Commercial', '+237 233 46 00 00', 'sabc@sabc.cm', 'Bonabéri', 'Douala', 'Cameroun', true)
+ON CONFLICT (code) DO NOTHING;
 
--- =============================================================================
--- 4. STRUCTURE DES ARTICLES (familles_produits, produits & fractions_produit)
--- =============================================================================
+-- ============================================================================
+-- 9. FAMILLES DE PRODUITS
+-- ============================================================================
 
--- Familles de produits
 INSERT INTO public.familles_produits (code, libelle, description) VALUES
-('FAM-BOISSON', 'Boissons & Rafraîchissements', 'Bières, jus de fruits, eaux minérales et sodas'),
-('FAM-ALIM', 'Produits Alimentaires Secs', 'Épicerie sèche, lait en poudre, cafés et céréales'),
-('FAM-HYG', 'Hygiène & Entretien', 'Savons, détergents et consommables de nettoyage');
+('LAITIER', 'Produits Laitiers', 'Laits, yaourts, fromages, beurre'),
+('CHOCO', 'Confiseries & Chocolats', 'Tablettes, tartines, poudres de cacao'),
+('BOISSONS', 'Boissons', 'Jus, sodas, eaux, bières'),
+('CONSERVE', 'Conserves', 'Poissons, légumes, sauces'),
+('HYGIENE', 'Hygiène et entretien', 'Savons, détergents, produits ménagers')
+ON CONFLICT (code) DO NOTHING;
 
--- Produits (Simples, Pères et Fils fractionnés)
--- 4.1. Produits Simples (Sans aucune liaison à une table pivot)
-INSERT INTO public.produits (code, designation, famille_id, est_pere, unite, prix_achat_ht, prix_vente_ht, tva, stock_actuel, stock_minimum, actif) VALUES
-('PROD-SIMP-SEL', 'Sac de Sel de Cuisine 25kg', (SELECT id FROM public.familles_produits WHERE code = 'FAM-ALIM'), false, 'Sac', 7500.00, 9500.00, 19.25, 40.00, 5.00, true),
-('PROD-SIMP-SAV', 'Savon Liquide Entretien 5L', (SELECT id FROM public.familles_produits WHERE code = 'FAM-HYG'), false, 'Bidon', 2800.00, 3500.00, 19.25, 15.00, 3.00, true);
+-- ============================================================================
+-- 10. PRODUITS
+-- ============================================================================
 
--- 4.2. Produits PÈRES (Packages / Conditionnements de gros)
-INSERT INTO public.produits (code, designation, famille_id, est_pere, unite, prix_achat_ht, prix_vente_ht, tva, stock_actuel, stock_minimum, actif) VALUES
-('CARTON-VIMTO', 'Carton de Jus Vimto (12 Canettes)', (SELECT id FROM public.familles_produits WHERE code = 'FAM-BOISSON'), true, 'Carton', 4200.00, 5400.00, 19.25, 20.00, 2.00, true),
-('PALETTE-EAU', 'Palette Eau Minérale Tangui (6 Packs)', (SELECT id FROM public.familles_produits WHERE code = 'FAM-BOISSON'), true, 'Palette', 9000.00, 11500.00, 19.25, 10.00, 1.00, true),
-('CARTON-NIDO', 'Carton Lait Nido 400g (24 Boîtes)', (SELECT id FROM public.familles_produits WHERE code = 'FAM-ALIM'), true, 'Carton', 48000.00, 57600.00, 0.00, 5.00, 1.00, true);
+INSERT INTO public.produits (code, designation, famille_id, est_pere, unite, prix_achat_ht, prix_vente_ht, tva, stock_actuel, stock_minimum, actif, date_peremption) VALUES
+('LAIT-CARTON', 'Carton de Lait Bonnet Rouge (40 boîtes)', 
+    (SELECT id FROM public.familles_produits WHERE code = 'LAITIER'), true, 'Carton', 16000.00, 19500.00, 19.25, 50.000, 5.000, true, '2026-12-31'),
+('LAIT-BOITE', 'Boîte de Lait Bonnet Rouge 160g', 
+    (SELECT id FROM public.familles_produits WHERE code = 'LAITIER'), false, 'Boîte', 400.00, 550.00, 19.25, 250.000, 20.000, true, '2026-12-31'),
+('YAOURT', 'Yaourt Nature sucré 500g', 
+    (SELECT id FROM public.familles_produits WHERE code = 'LAITIER'), false, 'Pot', 300.00, 450.00, 19.25, 100.000, 15.000, true, '2026-09-30'),
+('BEURRE', 'Beurre Doux 250g', 
+    (SELECT id FROM public.familles_produits WHERE code = 'LAITIER'), false, 'Plaquette', 800.00, 1200.00, 19.25, 80.000, 10.000, true, '2026-08-31'),
+('CHOC-TART-1KG', 'Chocolat Mambo à tartiner 1kg', 
+    (SELECT id FROM public.familles_produits WHERE code = 'CHOCO'), false, 'Pot', 2500.00, 3200.00, 19.25, 30.000, 3.000, true, '2027-01-31'),
+('CHOC-TAB-100G', 'Tablette Chocolat Noir 100g', 
+    (SELECT id FROM public.familles_produits WHERE code = 'CHOCO'), false, 'Tablette', 250.00, 400.00, 19.25, 200.000, 50.000, true, '2027-02-28'),
+('CHOC-POUDRE', 'Poudre de Cacao sucrée 500g', 
+    (SELECT id FROM public.familles_produits WHERE code = 'CHOCO'), false, 'Boîte', 600.00, 900.00, 19.25, 60.000, 10.000, true, '2027-01-31'),
+('JUS-ORANGE', 'Jus d''Orange 1L', 
+    (SELECT id FROM public.familles_produits WHERE code = 'BOISSONS'), false, 'Brique', 500.00, 750.00, 19.25, 150.000, 30.000, true, '2026-11-30'),
+('EAU-MINALE', 'Eau Minérale 1.5L', 
+    (SELECT id FROM public.familles_produits WHERE code = 'BOISSONS'), false, 'Bouteille', 200.00, 350.00, 19.25, 500.000, 100.000, true, '2027-03-31'),
+('BIERE-33CL', 'Bière 33cl', 
+    (SELECT id FROM public.familles_produits WHERE code = 'BOISSONS'), false, 'Canette', 300.00, 500.00, 19.25, 300.000, 50.000, true, '2026-10-31'),
+('THON', 'Thon entier naturel 250g', 
+    (SELECT id FROM public.familles_produits WHERE code = 'CONSERVE'), false, 'Boîte', 800.00, 1200.00, 19.25, 80.000, 15.000, true, '2027-04-30'),
+('SARDINE', 'Sardines à l''huile 125g', 
+    (SELECT id FROM public.familles_produits WHERE code = 'CONSERVE'), false, 'Boîte', 350.00, 550.00, 19.25, 120.000, 25.000, true, '2027-05-31'),
+('MAIS-DOUX', 'Maïs doux en grains 200g', 
+    (SELECT id FROM public.familles_produits WHERE code = 'CONSERVE'), false, 'Boîte', 250.00, 400.00, 19.25, 100.000, 20.000, true, '2027-06-30'),
+('SAVON', 'Savon de Marseille 300g', 
+    (SELECT id FROM public.familles_produits WHERE code = 'HYGIENE'), false, 'Pain', 400.00, 600.00, 19.25, 200.000, 40.000, true, NULL),
+('DETERGENT', 'Lessive en poudre 2kg', 
+    (SELECT id FROM public.familles_produits WHERE code = 'HYGIENE'), false, 'Boîte', 1200.00, 1800.00, 19.25, 60.000, 10.000, true, '2026-12-31')
+ON CONFLICT (code) DO NOTHING;
 
--- 4.3. Produits FILS (Sous-unités issues du fractionnement / désassemblage)
-INSERT INTO public.produits (code, designation, famille_id, est_pere, unite, prix_achat_ht, prix_vente_ht, tva, stock_actuel, stock_minimum, actif) VALUES
-('CAN-VIMTO', 'Canette Vimto unitaire', (SELECT id FROM public.familles_produits WHERE code = 'FAM-BOISSON'), false, 'Canette', 350.00, 500.00, 19.25, 120.00, 24.00, true),
-('PACK-EAU', 'Pack Eau Minérale Tangui (6 Bouteilles)', (SELECT id FROM public.familles_produits WHERE code = 'FAM-BOISSON'), false, 'Pack', 1500.00, 2000.00, 19.25, 30.00, 6.00, true),
-('BOITE-NIDO', 'Boîte unitaire Lait Nido 400g', (SELECT id FROM public.familles_produits WHERE code = 'FAM-ALIM'), false, 'Boîte', 2000.00, 2600.00, 0.00, 48.00, 12.00, true);
+-- ============================================================================
+-- 11. FRACTIONNEMENT (1 Carton = 40 Boîtes)
+-- ============================================================================
 
--- 4.4. Liaisons de Fractionnement dans la table pivot (Liaison Pères -> Fils)
-INSERT INTO public.fractions_produit (produit_pere_id, produit_fils_id, quantite_fils) VALUES
-((SELECT id FROM public.produits WHERE code = 'CARTON-VIMTO'), (SELECT id FROM public.produits WHERE code = 'CAN-VIMTO'), 12),
-((SELECT id FROM public.produits WHERE code = 'PALETTE-EAU'),  (SELECT id FROM public.produits WHERE code = 'PACK-EAU'), 6),
-((SELECT id FROM public.produits WHERE code = 'CARTON-NIDO'),  (SELECT id FROM public.produits WHERE code = 'BOITE-NIDO'), 24);
+INSERT INTO public.fractions_produit (produit_pere_id, produit_fils_id, quantite_fils) 
+SELECT p1.id, p2.id, 40.000
+FROM public.produits p1, public.produits p2
+WHERE p1.code = 'LAIT-CARTON' AND p2.code = 'LAIT-BOITE'
+ON CONFLICT (produit_pere_id, produit_fils_id) DO NOTHING;
 
+-- ============================================================================
+-- 12. VÉRIFICATION FINALE
+-- ============================================================================
 
--- =============================================================================
--- 5. SUIVI DE LA TRÉSORERIE BANCAIRE (versements_banque)
--- =============================================================================
+SELECT '🏷️ Groupes: ' || COUNT(*)::text FROM public.groupes_utilisateurs
+UNION ALL
+SELECT '👥 Utilisateurs: ' || COUNT(*)::text FROM public.utilisateurs
+UNION ALL
+SELECT '🔐 Droits: ' || COUNT(*)::text FROM public.droits
+UNION ALL
+SELECT '📁 Familles: ' || COUNT(*)::text FROM public.familles_produits
+UNION ALL
+SELECT '📦 Produits: ' || COUNT(*)::text FROM public.produits
+UNION ALL
+SELECT '🏦 Banques: ' || COUNT(*)::text FROM public.banques
+UNION ALL
+SELECT '👤 Clients: ' || COUNT(*)::text FROM public.clients
+UNION ALL
+SELECT '🚚 Fournisseurs: ' || COUNT(*)::text FROM public.fournisseurs;
 
-INSERT INTO public.versements_banque (banque_id, montant, date_versement, reference, motif, utilisateur_id) VALUES
-(
-    (SELECT id FROM public.banques WHERE code = 'AFT-01'), 
-    2500000.00, 
-    NOW() - INTERVAL '5 days', 
-    'VRST-2026-001', 
-    'Versement des fonds de caisse - Ventes semaine 23', 
-    (SELECT id FROM public.utilisateurs WHERE login = 'admin')
-),
-(
-    (SELECT id FROM public.banques WHERE code = 'SGC-02'), 
-    1200000.00, 
-    NOW() - INTERVAL '2 days', 
-    'CHQ-NESTLE-441', 
-    'Approvisionnement compte courant pour facture Nestlé', 
-    (SELECT id FROM public.utilisateurs WHERE login = 'admin')
-);
+-- ============================================================================
+-- 13. MATRICE DES DROITS PAR GROUPE
+-- ============================================================================
 
-
--- =============================================================================
--- MISE À JOUR ET ALIGNEMENT DES SÉQUENCES POSTGRESQL (Évite les bugs d'auto-incrément)
--- =============================================================================
-SELECT setval('public.droits_id_seq', COALESCE((SELECT MAX(id) FROM public.droits), 1));
-SELECT setval('public.groupes_utilisateurs_id_seq', COALESCE((SELECT MAX(id) FROM public.groupes_utilisateurs), 1));
-SELECT setval('public.utilisateurs_id_seq', COALESCE((SELECT MAX(id) FROM public.utilisateurs), 1));
-SELECT setval('public.banques_id_seq', COALESCE((SELECT MAX(id) FROM public.banques), 1));
-SELECT setval('public.fournisseurs_id_seq', COALESCE((SELECT MAX(id) FROM public.fournisseurs), 1));
-SELECT setval('public.categories_clients_id_seq', COALESCE((SELECT MAX(id) FROM public.categories_clients), 1));
-SELECT setval('public.clients_id_seq', COALESCE((SELECT MAX(id) FROM public.clients), 1));
-SELECT setval('public.familles_produits_id_seq', COALESCE((SELECT MAX(id) FROM public.familles_produits), 1));
-SELECT setval('public.produits_id_seq', COALESCE((SELECT MAX(id) FROM public.produits), 1));
-SELECT setval('public.versements_banque_id_seq', COALESCE((SELECT MAX(id) FROM public.versements_banque), 1));
+SELECT 
+    d.module,
+    d.code,
+    d.description,
+    CASE WHEN EXISTS (
+        SELECT 1 FROM public.groupes_droits gd 
+        JOIN public.groupes_utilisateurs gu ON gd.groupe_id = gu.id
+        WHERE gd.droit_id = d.id AND gu.nom = 'ADMINISTRATEURS'
+    ) THEN '✅' ELSE '❌' END AS admin,
+    CASE WHEN EXISTS (
+        SELECT 1 FROM public.groupes_droits gd 
+        JOIN public.groupes_utilisateurs gu ON gd.groupe_id = gu.id
+        WHERE gd.droit_id = d.id AND gu.nom = 'VENDEURS'
+    ) THEN '✅' ELSE '❌' END AS vendeurs,
+    CASE WHEN EXISTS (
+        SELECT 1 FROM public.groupes_droits gd 
+        JOIN public.groupes_utilisateurs gu ON gd.groupe_id = gu.id
+        WHERE gd.droit_id = d.id AND gu.nom = 'LOGISTICIENS'
+    ) THEN '✅' ELSE '❌' END AS logisticiens,
+    CASE WHEN EXISTS (
+        SELECT 1 FROM public.groupes_droits gd 
+        JOIN public.groupes_utilisateurs gu ON gd.groupe_id = gu.id
+        WHERE gd.droit_id = d.id AND gu.nom = 'COMPTABILITE'
+    ) THEN '✅' ELSE '❌' END AS comptabilite
+FROM public.droits d
+ORDER BY d.module, d.code;
 
 COMMIT;
