@@ -9,7 +9,7 @@ storage/corbeille/*.xml
 # Scripts de seed locaux (contiennent des hash de mots de passe générés)
 config/seed_admin.sql
 config/seed_test.sql
-config/patch_audit.sql
+
 
 # Divers
 *.log

@@ -9,7 +9,7 @@ abstract class Controller {
         Auth::verifierConnexion();
         $this->utilisateurCourant = Auth::utilisateurCourant();
     }
-    ///bonjour
+    ///pour faire de nuveau comits , il vas faloir signaler au autre menbre
 
     /**
      * Rend une vue dans le layout principal via ob_start().
