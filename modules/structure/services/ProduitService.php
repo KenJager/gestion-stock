@@ -8,7 +8,7 @@ use Database;
 class ProduitService
 {
     /**
-     * Crée les produits fils et les fractions pour un produit père existant
+     * Cas A & B : Enregistre ou met à jour un produit père et crée ses fils à la volée
      */
     public function creerProduitAvecFractions(array $donneesPere, array $fils): int {
         $pdo = Database::connexion();
@@ -16,55 +16,78 @@ class ProduitService
         try {
             $pdo->beginTransaction();
 
-            // Vérifier si le produit père existe
+            // 1. Vérifier si le produit père existe déjà (Fractionnement a posteriori - Cas A)
             $sqlVerif = "SELECT id FROM produits WHERE code = :code";
             $pereExistant = Database::query($sqlVerif, [':code' => $donneesPere['code']])->fetch();
             
-            if (!$pereExistant) {
-                throw new \RuntimeException("Produit père introuvable.");
+            if ($pereExistant) {
+                $idPere = (int)$pereExistant['id'];
+                // Mettre à jour le produit existant pour qu'il devienne père (Directive 4)
+                $sqlUp = "UPDATE produits SET est_pere = true WHERE id = :id";
+                $stmtUp = $pdo->prepare($sqlUp);
+                $stmtUp->execute([':id' => $idPere]);
+            } else {
+                // Création à la volée du père (Cas B)
+                $sqlIn = "INSERT INTO produits (
+                            code, designation, famille_id, est_pere, unite, 
+                            prix_achat_ht, prix_vente_ht, tva, actif
+                          ) VALUES (
+                            :code, :designation, :famille_id, true, :unite, 
+                            :prix_achat_ht, :prix_vente_ht, :tva, 1
+                          ) RETURNING id";
+                $stmtIn = $pdo->prepare($sqlIn);
+                $stmtIn->execute([
+                    ':code'          => $donneesPere['code'],
+                    ':designation'   => $donneesPere['designation'],
+                    ':famille_id'    => $donneesPere['famille_id'],
+                    ':unite'         => $donneesPere['unite'] ?? null,
+                    ':prix_achat_ht' => $donneesPere['prix_achat_ht'] ?? 0,
+                    ':prix_vente_ht' => $donneesPere['prix_vente_ht'] ?? 0,
+                    ':tva'           => $donneesPere['tva'] ?? 0,
+                ]);
+                $resPere = $stmtIn->fetch();
+                $idPere = (int)$resPere['id'];
             }
-            $idPere = $pereExistant['id'];
             
-            // Créer chaque produit fils et la fraction
+            // 2. Traiter les produits fils à la volée
             foreach ($fils as $f) {
-                // Vérifier si le produit fils existe déjà
                 $sqlVerifFils = "SELECT id FROM produits WHERE code = :code";
                 $filsExistant = Database::query($sqlVerifFils, [':code' => $f['code']])->fetch();
                 
                 if ($filsExistant) {
-                    $idFils = $filsExistant['id'];
+                    $idFils = (int)$filsExistant['id'];
                 } else {
+                    // Création du produit fils à la volée
                     $sqlFils = "INSERT INTO produits (
                                     code, designation, famille_id, est_pere,
                                     unite, prix_vente_ht, tva, actif
                                 ) VALUES (
-                                    :code, :designation, :famille_id, :est_pere,
-                                    :unite, :prix_vente_ht, :tva, :actif
+                                    :code, :designation, :famille_id, false,
+                                    :unite, :prix_vente_ht, :tva, 1
                                 ) RETURNING id";
-                    $stmt = $pdo->prepare($sqlFils);
-                    $stmt->execute([
-                        ':code' => $f['code'],
-                        ':designation' => $f['designation'],
-                        ':famille_id' => $f['famille_id'],
-                        ':est_pere' => 0,
-                        ':unite' => $f['unite'] ?? null,
+                    $stmtFils = $pdo->prepare($sqlFils);
+                    $stmtFils->execute([
+                        ':code'          => $f['code'],
+                        ':designation'   => $f['designation'],
+                        ':famille_id'    => $donneesPere['famille_id'], // hérite de la famille du père
+                        ':unite'         => $f['unite'] ?? null,
                         ':prix_vente_ht' => $f['prix_vente_ht'] ?? 0,
-                        ':tva' => $donneesPere['tva'] ?? 0,
-                        ':actif' => 1,
+                        ':tva'           => $donneesPere['tva'] ?? 0,
                     ]);
-                    $idFils = (int)$pdo->lastInsertId();
+                    $resFils = $stmtFils->fetch();
+                    $idFils = (int)$resFils['id'];
                 }
                 
-                // Créer ou mettre à jour la fraction
+                // 3. Créer ou mettre à jour la ligne dans fractions_produit
                 $sqlFraction = "INSERT INTO fractions_produit (produit_pere_id, produit_fils_id, quantite_fils)
                                 VALUES (:produit_pere_id, :produit_fils_id, :quantite_fils)
                                 ON CONFLICT (produit_pere_id, produit_fils_id) DO UPDATE 
                                 SET quantite_fils = EXCLUDED.quantite_fils";
-                $stmt = $pdo->prepare($sqlFraction);
-                $stmt->execute([
+                $stmtFrac = $pdo->prepare($sqlFraction);
+                $stmtFrac->execute([
                     ':produit_pere_id' => $idPere,
                     ':produit_fils_id' => $idFils,
-                    ':quantite_fils' => $f['quantite_fils'] ?? 1,
+                    ':quantite_fils'   => $f['quantite_fils'] ?? 1,
                 ]);
             }
 
@@ -73,7 +96,7 @@ class ProduitService
             
         } catch (\Exception $e) {
             $pdo->rollBack();
-            throw new \RuntimeException("Erreur lors du fractionnement : " . $e->getMessage());
+            throw new \RuntimeException("Erreur lors du traitement du produit et ses fractions : " . $e->getMessage());
         }
     }
 }

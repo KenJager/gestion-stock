@@ -4,6 +4,18 @@
 
 namespace structure\services;
 
+require_once ROOT . '/core/Auth.php';
+require_once ROOT . '/core/Corbeille.php';
+require_once ROOT . '/modules/structure/models/ProduitModel.php';
+require_once ROOT . '/modules/structure/models/FractionModel.php';
+
+use Corbeille;
+use Database;
+use RuntimeException;
+use ProduitModel;
+use FractionModel;
+use Exception;
+
 class CorbeilleService {
 
     public function restaurerBanque(string $fichier): void {
@@ -166,116 +178,81 @@ class CorbeilleService {
 
     public function restaurerFamille(string $fichier): void {
         $donnees = \Corbeille::charger($fichier);
-        if ($donnees['table'] !== 'familles_produits') {
-            throw new \RuntimeException('Ce fichier ne correspond pas à une famille.');
+        // Selon votre structure, le tag peut être 'familles_produits' ou 'familles'
+        if ($donnees['table'] !== 'familles_produits' && $donnees['table'] !== 'familles') {
+            throw new \RuntimeException("Ce fichier ne correspond pas à une famille.");
         }
 
-        $p = $donnees['principal'];
         $pdo = \Database::connexion();
-        
+        $famille = $donnees['principal'];
+        $liees = $donnees['liees'] ?? [];
+
         try {
             $pdo->beginTransaction();
 
-            // 1. Récupérer l'ID d'origine de la famille
-            $ancienFamilleId = $p['id'] ?? null;
-            
-            // 2. Vérifier si la famille existe déjà
-            $sqlVerif = "SELECT id FROM familles_produits WHERE code = :code";
-            $familleExistante = \Database::query($sqlVerif, [':code' => $p['code']])->fetch();
-            
-            if ($familleExistante) {
-                // La famille existe déjà, on utilise son ID
-                $nouvelleFamilleId = $familleExistante['id'];
-            } else {
-                // 3. Désactiver temporairement l'auto-incrément pour insérer un ID spécifique
-                $pdo->exec("SET CONSTRAINTS ALL DEFERRED");
-                
-                // Permettre l'insertion d'un ID spécifique (PostgreSQL)
-                $pdo->exec("SELECT setval('familles_produits_id_seq', (SELECT MAX(id) FROM familles_produits))");
-                
-                // Insérer la famille avec SON ID D'ORIGINE
-                $sql = "INSERT INTO familles_produits (id, code, libelle, description, date_creation)
-                        VALUES (:id, :code, :libelle, :description, :date_creation)";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([
-                    ':id' => $ancienFamilleId,
-                    ':code' => $p['code'] ?? null,
-                    ':libelle' => $p['libelle'] ?? null,
-                    ':description' => $p['description'] ?? null,
-                    ':date_creation' => $p['date_creation'] ?? date('Y-m-d H:i:s'),
-                ]);
-                $nouvelleFamilleId = $ancienFamilleId;
-                
-                // Réactiver l'auto-incrément à la bonne valeur
-                $pdo->exec("SELECT setval('familles_produits_id_seq', (SELECT MAX(id) FROM familles_produits))");
-            }
-            
-            // 4. Restaurer les produits avec leurs IDs d'origine
-            if (!empty($donnees['liees']['produits'])) {
-                // Désactiver l'auto-incrément pour les produits
-                $pdo->exec("SELECT setval('produits_id_seq', (SELECT MAX(id) FROM produits))");
-                
-                $sqlProd = "INSERT INTO produits (
-                                id, code, designation, famille_id, produit_pere_id, est_pere,
-                                unite, prix_achat_ht, prix_vente_ht, tva,
-                                stock_actuel, stock_minimum, date_peremption, actif, date_creation
-                            ) VALUES (
-                                :id, :code, :designation, :famille_id, :produit_pere_id, :est_pere,
-                                :unite, :prix_achat_ht, :prix_vente_ht, :tva,
-                                :stock_actuel, :stock_minimum, :date_peremption, :actif, :date_creation
-                            )";
-                
-                foreach ($donnees['liees']['produits'] as $prod) {
-                    // Vérifier si le produit existe déjà
-                    $verifProd = \Database::query("SELECT id FROM produits WHERE code = :code", [':code' => $prod['code']])->fetch();
-                    if ($verifProd) {
-                        continue;
+            // 1. Restaurer la famille elle-même avec son ID d'origine
+            $sqlFamille = "INSERT INTO familles_produits (id, code, libelle, description)
+                           VALUES (:id, :code, :libelle, :description)
+                           ON CONFLICT (id) DO UPDATE SET code = EXCLUDED.code, libelle = EXCLUDED.libelle";
+            $stmtF = $pdo->prepare($sqlFamille);
+            $stmtF->execute([
+                ':id'          => (int)$famille['id'],
+                ':code'        => $famille['code'],
+                ':libelle'     => $famille['libelle'],
+                ':description' => $famille['description'] ?? null
+            ]);
+
+            // 2. Restaurer les produits liés à cette famille
+            if (!empty($liees['produits'])) {
+                foreach ($liees['produits'] as $p) {
+                    // On vérifie si le produit n'a pas déjà été recréé entre temps
+                    $sqlCheck = "SELECT 1 FROM produits WHERE id = :id";
+                    $existe = \Database::query($sqlCheck, [':id' => (int)$p['id']])->fetch();
+
+                    if (!$existe) {
+                        // Attention : On exclut STRICTEMENT produit_pere_id de l'insertion !
+                        $sqlProd = "INSERT INTO produits (
+                                        id, code, designation, famille_id, est_pere,
+                                        unite, prix_achat_ht, prix_vente_ht, tva,
+                                        stock_actuel, stock_minimum, date_peremption, actif
+                                    ) VALUES (
+                                        :id, :code, :designation, :famille_id, :est_pere,
+                                        :unite, :prix_achat_ht, :prix_vente_ht, :tva,
+                                        :stock_actuel, :stock_minimum, :date_peremption, :actif
+                                    )";
+                        
+                        $stmtP = $pdo->prepare($sqlProd);
+                        $stmtP->execute([
+                            ':id'               => (int)$p['id'],
+                            ':code'             => $p['code'],
+                            ':designation'      => $p['designation'],
+                            ':famille_id'       => (int)$p['famille_id'],
+                            ':est_pere'         => ($p['est_pere'] === 't' || $p['est_pere'] === '1' || $p['est_pere'] === true) ? 1 : 0,
+                            ':unite'            => $p['unite'] ?? null,
+                            ':prix_achat_ht'    => $p['prix_achat_ht'] ?? 0,
+                            ':prix_vente_ht'    => $p['prix_vente_ht'] ?? 0,
+                            ':tva'              => $p['tva'] ?? 0,
+                            ':stock_actuel'     => $p['stock_actuel'] ?? 0,
+                            ':stock_minimum'    => $p['stock_minimum'] ?? 0,
+                            ':date_peremption'  => !empty($p['date_peremption']) ? $p['date_peremption'] : null,
+                            ':actif'            => ($p['actif'] === 't' || $p['actif'] === '1' || $p['actif'] === true) ? 1 : 0
+                        ]);
                     }
-                    
-                    // Utiliser le NOUVEL ID de la famille
-                    $familleId = $nouvelleFamilleId;
-                    
-                    // Remplacer l'ancien ID du produit père s'il existe
-                    $produitPereId = null;
-                    if (!empty($prod['produit_pere_id'])) {
-                        // Chercher si le produit père a été restauré avec son ID d'origine
-                        $pere = \Database::query("SELECT id FROM produits WHERE id = :id", [':id' => $prod['produit_pere_id']])->fetch();
-                        if ($pere) {
-                            $produitPereId = $pere['id'];
-                        }
-                    }
-                    
-                    \Database::query($sqlProd, [
-                        ':id' => $prod['id'],
-                        ':code' => $prod['code'] ?? null,
-                        ':designation' => $prod['designation'] ?? null,
-                        ':famille_id' => $familleId,
-                        ':produit_pere_id' => $produitPereId,
-                        ':est_pere' => ($prod['est_pere'] === 't' || $prod['est_pere'] === '1' || $prod['est_pere'] === true) ? 1 : 0,
-                        ':unite' => $prod['unite'] ?? null,
-                        ':prix_achat_ht' => $prod['prix_achat_ht'] ?? 0,
-                        ':prix_vente_ht' => $prod['prix_vente_ht'] ?? 0,
-                        ':tva' => $prod['tva'] ?? 0,
-                        ':stock_actuel' => $prod['stock_actuel'] ?? 0,
-                        ':stock_minimum' => $prod['stock_minimum'] ?? 0,
-                        ':date_peremption' => $prod['date_peremption'] ?? null,
-                        ':actif' => ($prod['actif'] === 't' || $prod['actif'] === '1' || $prod['actif'] === true) ? 1 : 0,
-                        ':date_creation' => $prod['date_creation'] ?? date('Y-m-d H:i:s'),
-                    ]);
                 }
-                
-                // Réactiver l'auto-incrément
-                $pdo->exec("SELECT setval('produits_id_seq', (SELECT MAX(id) FROM produits))");
             }
+
+            // 3. Recaler les séquences PostgreSQL
+            $pdo->query("SELECT setval('familles_produits_id_seq', COALESCE((SELECT MAX(id) FROM familles_produits), 1))");
+            $pdo->query("SELECT setval('produits_id_seq', COALESCE((SELECT MAX(id) FROM produits), 1))");
 
             $pdo->commit();
             \Corbeille::supprimerFichier($fichier);
-            
-            $_SESSION['succes'] = "Famille et ses produits restaurés avec leurs IDs d'origine.";
-            
+
+            $_SESSION['succes'] = "La famille '" . $famille['libelle'] . "' et ses produits ont été restaurés.";
+
         } catch (\Exception $e) {
             $pdo->rollBack();
-            throw new \RuntimeException("Erreur lors de la restauration : " . $e->getMessage());
+            throw new \RuntimeException("Erreur lors de la restauration de la famille : " . $e->getMessage());
         }
     }
 
@@ -310,127 +287,71 @@ class CorbeilleService {
         \Corbeille::supprimerFichier($fichier);
     }
 
-    /**
-     * Restaure un produit et ses produits fils
-     */
     public function restaurerProduit(string $fichier): void {
         $donnees = \Corbeille::charger($fichier);
         if ($donnees['table'] !== 'produits') {
-            throw new \RuntimeException('Ce fichier ne correspond pas à un produit.');
+            throw new \RuntimeException("Ce fichier ne correspond pas à un produit.");
         }
 
+        $pdo = Database::connexion();
+        $produitModel = new ProduitModel();
+        $fractionModel = new FractionModel();
+
         $p = $donnees['principal'];
-        $pdo = \Database::connexion();
-        
+        $liees = $donnees['liees'] ?? [];
+
         try {
             $pdo->beginTransaction();
 
-            // Vérifier si le produit existe déjà
-            $sqlVerif = "SELECT id FROM produits WHERE code = :code";
-            $produitExistant = \Database::query($sqlVerif, [':code' => $p['code']])->fetch();
-            
-            if ($produitExistant) {
-                \Corbeille::supprimerFichier($fichier);
-                $_SESSION['info'] = "Le produit existe déjà, restauration ignorée.";
-                return;
+            // --- DIRECTIVE 3 : MODIFICATION DU CODE À LA VOLÉE EN CAS DE CONFLIT ---
+            // On vérifie le produit principal
+            while ($produitModel->existeParCode($p['code'])) {
+                // On ajoute un suffixe au code pour débloquer la restauration à la volée
+                $p['code'] .= '_REST';
             }
 
-            // Restaurer le produit principal
-            $sql = "INSERT INTO produits (
-                        id, code, designation, famille_id, est_pere,
-                        unite, prix_achat_ht, prix_vente_ht, tva,
-                        stock_actuel, stock_minimum, date_peremption, actif, date_creation
-                    ) VALUES (
-                        :id, :code, :designation, :famille_id, :est_pere,
-                        :unite, :prix_achat_ht, :prix_vente_ht, :tva,
-                        :stock_actuel, :stock_minimum, :date_peremption, :actif, :date_creation
-                    )";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([
-                ':id' => $p['id'],
-                ':code' => $p['code'] ?? null,
-                ':designation' => $p['designation'] ?? null,
-                ':famille_id' => $p['famille_id'] ?? null,
-                ':est_pere' => ($p['est_pere'] === 't' || $p['est_pere'] === '1' || $p['est_pere'] === true) ? 1 : 0,
-                ':unite' => $p['unite'] ?? null,
-                ':prix_achat_ht' => $p['prix_achat_ht'] ?? 0,
-                ':prix_vente_ht' => $p['prix_vente_ht'] ?? 0,
-                ':tva' => $p['tva'] ?? 0,
-                ':stock_actuel' => $p['stock_actuel'] ?? 0,
-                ':stock_minimum' => $p['stock_minimum'] ?? 0,
-                ':date_peremption' => $p['date_peremption'] ?? null,
-                ':actif' => ($p['actif'] === 't' || $p['actif'] === '1' || $p['actif'] === true) ? 1 : 0,
-                ':date_creation' => $p['date_creation'] ?? date('Y-m-d H:i:s'),
-            ]);
-            
-            // Mettre à jour la séquence
-            $pdo->exec("SELECT setval('produits_id_seq', (SELECT MAX(id) FROM produits))");
-            
-            // Restaurer les produits fils
-            if (!empty($donnees['liees']['produits_fils'])) {
-                foreach ($donnees['liees']['produits_fils'] as $fils) {
-                    // Vérifier si le produit fils existe déjà
-                    $verifFils = \Database::query("SELECT id FROM produits WHERE code = :code", [':code' => $fils['code']])->fetch();
-                    if ($verifFils) {
-                        continue;
+            // On vérifie les codes des produits fils s'il y en a
+            if (!empty($liees['produits_fils'])) {
+                foreach ($liees['produits_fils'] as $index => $fils) {
+                    while ($produitModel->existeParCode($fils['code'])) {
+                        $liees['produits_fils'][$index]['code'] .= '_REST';
                     }
-                    
-                    $sqlFils = "INSERT INTO produits (
-                                    id, code, designation, famille_id, est_pere,
-                                    unite, prix_achat_ht, prix_vente_ht, tva,
-                                    stock_actuel, stock_minimum, date_peremption, actif, date_creation
-                                ) VALUES (
-                                    :id, :code, :designation, :famille_id, :est_pere,
-                                    :unite, :prix_achat_ht, :prix_vente_ht, :tva,
-                                    :stock_actuel, :stock_minimum, :date_peremption, :actif, :date_creation
-                                )";
-                    $stmt = $pdo->prepare($sqlFils);
-                    $stmt->execute([
-                        ':id' => $fils['id'],
-                        ':code' => $fils['code'] ?? null,
-                        ':designation' => $fils['designation'] ?? null,
-                        ':famille_id' => $fils['famille_id'] ?? null,
-                        ':est_pere' => 0,
-                        ':unite' => $fils['unite'] ?? null,
-                        ':prix_achat_ht' => $fils['prix_achat_ht'] ?? 0,
-                        ':prix_vente_ht' => $fils['prix_vente_ht'] ?? 0,
-                        ':tva' => $fils['tva'] ?? 0,
-                        ':stock_actuel' => $fils['stock_actuel'] ?? 0,
-                        ':stock_minimum' => $fils['stock_minimum'] ?? 0,
-                        ':date_peremption' => $fils['date_peremption'] ?? null,
-                        ':actif' => ($fils['actif'] === 't' || $fils['actif'] === '1' || $fils['actif'] === true) ? 1 : 0,
-                        ':date_creation' => $fils['date_creation'] ?? date('Y-m-d H:i:s'),
-                    ]);
                 }
             }
-            
-            // Restaurer les fractions
-            if (!empty($donnees['liees']['fractions_produit'])) {
-                foreach ($donnees['liees']['fractions_produit'] as $fraction) {
-                    $sqlFraction = "INSERT INTO fractions_produit (produit_pere_id, produit_fils_id, quantite_fils)
-                                    VALUES (:produit_pere_id, :produit_fils_id, :quantite_fils)
-                                    ON CONFLICT (produit_pere_id, produit_fils_id) DO UPDATE 
-                                    SET quantite_fils = EXCLUDED.quantite_fils";
-                    $stmt = $pdo->prepare($sqlFraction);
-                    $stmt->execute([
-                        ':produit_pere_id' => $fraction['produit_pere_id'],
-                        ':produit_fils_id' => $fraction['produit_fils_id'],
-                        ':quantite_fils' => $fraction['quantite_fils'] ?? 1,
-                    ]);
+
+            // --- RESTAURATION DU PRODUIT PRINCIPAL (ID D'ORIGINE) ---
+            $produitModel->restaurerAvecId($p);
+
+            // --- RESTAURATION DES PRODUITS FILS EN CASCADE (Si le produit est un père) ---
+            if (!empty($liees['produits_fils'])) {
+                foreach ($liees['produits_fils'] as $fils) {
+                    // Si le fils n'existe plus du tout en BDD, on le réinsère avec son ID d'origine
+                    if (!$produitModel->existe((int)$fils['id'])) {
+                        $produitModel->restaurerAvecId($fils);
+                    }
                 }
             }
-            
-            // Mettre à jour la séquence des produits
-            $pdo->exec("SELECT setval('produits_id_seq', (SELECT MAX(id) FROM produits))");
+
+            // --- RESTAURATION DES LIAISONS DANS FRACTIONS_PRODUIT ---
+            if (!empty($liees['fractions_produit'])) {
+                foreach ($liees['fractions_produit'] as $liaison) {
+                    $fractionModel->restaurerLiaison($liaison);
+                }
+            }
+
+            // --- MISE À JOUR STRUGTE DES SÉQUENCES POSTGRESQL (Évite les plantages futurs) ---
+            // On recale la séquence sur le maximum actuel pour éviter les conflits d'auto-incrément futurs
+            $pdo->query("SELECT setval('produits_id_seq', COALESCE((SELECT MAX(id) FROM produits), 1))");
+            $pdo->query("SELECT setval('fractions_produit_id_seq', COALESCE((SELECT MAX(id) FROM fractions_produit), 1))");
 
             $pdo->commit();
             \Corbeille::supprimerFichier($fichier);
-            
-            $_SESSION['succes'] = "Produit et ses " . count($donnees['liees']['produits_fils'] ?? []) . " fils restaurés.";
-            
+
+            $_SESSION['succes'] = "Le produit '" . $p['designation'] . "' ainsi que ses dépendances ont été restaurés avec succès.";
+
         } catch (\Exception $e) {
             $pdo->rollBack();
-            throw new \RuntimeException("Erreur lors de la restauration : " . $e->getMessage());
+            throw new \RuntimeException("Erreur lors de la restauration du produit : " . $e->getMessage());
         }
     }
 

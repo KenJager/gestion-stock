@@ -18,10 +18,14 @@ $action = $estEdition
 
 $actif   = $produit['actif']   ?? true;
 $estActif = ($actif === true || $actif === 't' || $actif === 1);
+
 $estPere  = ($produit['est_pere'] ?? false) === true
          || ($produit['est_pere'] ?? false) === 1
          || ($produit['est_pere'] ?? false) === 't';
-$estFils  = !$estPere && ($produit['produit_pere_id'] ?? null) !== null;
+
+// Utilisation de la clé parent_id harmonisée entre l'édition et l'étape 1
+$id_du_pere = $produit['parent_id'] ?? $e1['parent_id'] ?? null;
+$estFils  = !$estPere && $id_du_pere !== null;
 
 // Données reçues de l'étape 1 (pour pré-remplir l'étape 2)
 $e1 = $etape1 ?? [];
@@ -162,7 +166,7 @@ function indicateurEtapes(int $etapeCourante): void {
             </label>
             
             <?php if ($estEdition && $estFils): ?>
-            <div class="rounded-md bg-blue-50 border border-blue-200 px-4 py-3 flex items-center gap-3">
+            <div class="rounded-md bg-blue-50 border border-blue-200 p-3 flex items-center gap-3 mt-2">
                 <i class="fa-solid fa-code-branch text-blue-500 text-sm"></i>
                 <p class="text-xs text-blue-700">
                     Ce produit est un <strong>produit fils</strong>. Il est lié au produit père sélectionné ci-dessus.
@@ -171,35 +175,31 @@ function indicateurEtapes(int $etapeCourante): void {
             <?php endif; ?>
 
             <!-- Produit père (uniquement si ce n'est PAS un produit père lui-même) -->
-            <?php if (!$estPere): ?>
-                <div class="form-group mt-4" id="bloc-produit-pere">
-                    <label class="label">Produit père</label>
-                    <select name="produit_pere_id" class="input">
-                        <option value="">— Aucun (produit simple) —</option>
-                        <?php foreach ($produitsPeres as $pp): ?>
-                            <?php if ($estEdition && $pp['id'] == $produit['id']) continue; ?>
-                            <option value="<?= $pp['id'] ?>"
-                                    <?= (($produit['produit_pere_id'] ?? '') == $pp['id']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($pp['code']) ?> — <?= htmlspecialchars($pp['designation']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <p class="text-xs text-gray-400 mt-1">
-                        Si ce produit est un sous-produit (fils), sélectionnez son produit père.
-                    </p>
-                <!-- </div>
+            <div class="form-group mt-2" id="bloc-produit-pere" style="<?= $estPere ? 'display:none;' : '' ?>">
+                <label class="label">Rattacher à un produit père</label>
+                <select name="parent_id" id="select-produit-pere" class="input" <?= $estPere ? 'disabled' : '' ?>>
+                    <option value="">-- Aucun (Produit simple) --</option>
+                    <?php foreach ($produitsPeres as $p): ?>
+                        <?php 
+                            // Évite qu'un produit puisse se sélectionner lui-même s'il passe de simple à fils
+                            if ($estEdition && (int)$produit['id'] === (int)$p['id']) continue;
+                            
+                            $selected = (!empty($id_du_pere) && (int)$id_du_pere === (int)$p['id']) ? 'selected' : '';
+                        ?>
+                        <option value="<?= $p['id'] ?>" <?= $selected ?>><?= htmlspecialchars($p['designation']) ?> (<?= htmlspecialchars($p['code']) ?>)</option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
 
-                ✅ Champ pour la quantité (combien de fils dans 1 père)
-                <div class="mt-4" id="bloc-quantite-fils"> -->
-                    <label class="label">Quantité par père</label>
-                    <input type="number" name="quantite_fils" step="1" min="1" 
-                        class="input max-w-xs" value="1">
-                    <p class="text-xs text-gray-400 mt-1">
-                        Nombre d'unités de ce produit dans une unité du produit père.
-                        Exemple: 12 morceaux par carton.
-                    </p>
-                </div>
-            <?php endif; ?>
+            <div class="mt-2" id="bloc-quantite-fils" style="<?= !$estFils ? 'display:none;' : '' ?>">
+                <label class="label">Quantité par père</label>
+                <input type="number" name="quantite_fils" id="input-quantite-fils" step="1" min="1" 
+                    class="input max-w-xs" value="<?= htmlspecialchars($quantite_fils_val) ?>" <?= !$estFils ? 'disabled' : '' ?>>
+                <p class="text-xs text-gray-400 mt-1">
+                    Nombre d'unités de ce produit dans une unité du produit père.
+                    Exemple: 12 morceaux par carton.
+                </p>
+            </div>
         </div>
 
         <?php endif; /* fin étape 1 / édition */ ?>
@@ -285,7 +285,7 @@ function indicateurEtapes(int $etapeCourante): void {
             </h2>
 
             <!-- En édition : lecture seule -->
-            <div class="rounded-md bg-gray-50 border border-gray-200 px-4 py-3 flex items-center gap-3">
+            <div class="rounded-md bg-gray-50 border border-gray-200 p-3 flex items-center mt-2 gap-3">
                 <i class="fa-solid fa-circle-info text-gray-400 text-sm"></i>
                 <p class="text-xs text-gray-500">
                     Stock actuel : <strong class="text-gray-800"><?= number_format((float)($produit['stock_actuel'] ?? 0), 3, ',', ' ') ?></strong>
@@ -294,7 +294,7 @@ function indicateurEtapes(int $etapeCourante): void {
             </div>
 
             <!-- Stock minimum -->
-            <div class="form-group">
+            <div class="form-group mt-2">
                 <label class="label">Stock minimum (seuil d'alerte)</label>
                 <input type="number" step="0.001" min="0" name="stock_minimum"
                        class="input max-w-xs"
@@ -365,25 +365,57 @@ function indicateurEtapes(int $etapeCourante): void {
     mettreAJour();
 })();
 
-// ── Masquer le sélecteur "produit père" si "est_pere" est coché ──────────
+// ── Masquer le sélecteur "produit père" et la "quantité" si "est_pere" est coché ──────────
+// ── Gestion dynamique des blocs "Produit Père" et "Quantité Fils" ──────────
+// ── Gestion dynamique des transitions (Simple <-> Père <-> Fils) ──────────
 (function () {
-    const checkbox = document.getElementById('checkbox-est-pere');
-    const bloc     = document.getElementById('bloc-produit-pere');
-    if (!checkbox || !bloc) return;
+    const checkbox      = document.getElementById('checkbox-est-pere');
+    const blocPere      = document.getElementById('bloc-produit-pere');
+    const selectParent  = document.getElementById('select-produit-pere');
+    const blocQuantite  = document.getElementById('bloc-quantite-fils');
+    const inputQuantite = document.getElementById('input-quantite-fils');
+    
+    if (!checkbox) return;
 
     function sync() {
         if (checkbox.checked) {
-            bloc.style.display = 'none';
-            const sel = bloc.querySelector('select');
-            if (sel) { sel.disabled = true; sel.value = ''; }
+            // Devenu ou est un produit PÈRE : masquer et désactiver les options de fils
+            if (blocPere) blocPere.style.display = 'none';
+            if (selectParent) { selectParent.disabled = true; selectParent.value = ''; }
+            
+            if (blocQuantite) blocQuantite.style.display = 'none';
+            if (inputQuantite) inputQuantite.disabled = true;
         } else {
-            bloc.style.display = 'block';
-            const sel = bloc.querySelector('select');
-            if (sel) sel.disabled = false;
+            // Produit SIMPLE ou FILS : réafficher le sélecteur de parent
+            if (blocPere) blocPere.style.display = 'block';
+            if (selectParent) selectParent.disabled = false;
+            
+            // Gérer l'apparition de la quantité uniquement si un parent est sélectionné
+            syncQuantiteVisibilite();
         }
     }
 
+    function syncQuantiteVisibilite() {
+        if (!blocQuantite || !selectParent) return;
+        
+        // Si l'utilisateur choisit un parent (devient fils), on affiche la quantité
+        if (selectParent.value !== '') {
+            blocQuantite.style.display = 'block';
+            if (inputQuantite) inputQuantite.disabled = false;
+        } else {
+            // Si la valeur est vide (redevient produit simple), on cache la quantité
+            blocQuantite.style.display = 'none';
+            if (inputQuantite) inputQuantite.disabled = true;
+        }
+    }
+
+    // Écouteurs d'événements
     checkbox.addEventListener('change', sync);
+    if (selectParent) {
+        selectParent.addEventListener('change', syncQuantiteVisibilite);
+    }
+
+    // Calcul de l'état initial au chargement de la page
     sync();
 })();
 </script>

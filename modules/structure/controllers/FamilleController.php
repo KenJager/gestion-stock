@@ -87,23 +87,27 @@ class FamilleController extends Controller
      */
     public function supprimer(int $id): void {
         Auth::verifierDroit('STRUCTURE_SUPPRIMER');
-        $this->verifierMethode('POST');
         
-        // Récupérer la famille
         $famille = $this->modele->trouverParId($id);
-        
-        // Récupérer TOUS les produits de cette famille avec TOUS leurs champs
+        if (!$famille) {
+            $_SESSION['erreur'] = "Famille introuvable.";
+            $this->redirigerVers('/structure/familles');
+            return;
+        }
+
+        // Requête adaptée : on passe par fractions_produit pour récupérer le code du père si le produit est un fils
         $sqlProduits = "SELECT p.*, pp.code AS produit_pere_code 
                         FROM produits p
-                        LEFT JOIN produits pp ON pp.id = p.produit_pere_id
+                        LEFT JOIN fractions_produit fp ON fp.produit_fils_id = p.id
+                        LEFT JOIN produits pp ON pp.id = fp.produit_pere_id
                         WHERE p.famille_id = :id";
         $produits = \Database::query($sqlProduits, [':id' => $id])->fetchAll();
         
-        // Archiver la famille avec les produits (simplement comme tableau de produits)
+        // Archiver la famille avec les produits
         Corbeille::archiver(
             'familles_produits',
             $famille,
-            ['produits' => $produits],  // ← clé simple, pas de structure imbriquée
+            ['produits' => $produits],
             $famille['libelle']
         );
         

@@ -61,7 +61,7 @@
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </a>
                             <?php endif; ?>
-                            <?php if (\Auth::peut('USERS_SUPPRIMER')): echo((int)$g['nb_utilisateurs']) ?>
+                            <?php if (\Auth::peut('USERS_SUPPRIMER')): ?>
                                 <form action="<?= BASE_URL ?>/groupes/<?= $g['id'] ?>/supprimer"
                                       method="POST" style="display:inline;"
                                       onsubmit="return confirm('Supprimer ce groupe ?');">
