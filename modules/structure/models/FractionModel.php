@@ -28,4 +28,20 @@ class FractionModel extends Model
         $stmt->execute([':pere_id' => $produitPereId]);
         return $stmt->fetchAll();
     }
+
+    /**
+     * Insertion forcée pour la restauration de la liaison de fractionnement
+     */
+    public function restaurerLiaison(array $f): void {
+        $sql = "INSERT INTO fractions_produit (id, produit_pere_id, produit_fils_id, quantite_fils)
+                VALUES (:id, :produit_pere_id, :produit_fils_id, :quantite_fils)
+                ON CONFLICT (produit_pere_id, produit_fils_id) DO NOTHING";
+        $stmt = $this->pdo()->prepare($sql);
+        $stmt->execute([
+            ':id'              => (int)$f['id'],
+            ':produit_pere_id' => (int)$f['produit_pere_id'],
+            ':produit_fils_id' => (int)$f['produit_fils_id'],
+            ':quantite_fils'   => (float)$f['quantite_fils']
+        ]);
+    }
 }

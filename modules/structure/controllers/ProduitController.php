@@ -135,24 +135,40 @@ class ProduitController extends Controller
         $this->redirigerVers('/structure/produits');
     }
 
-    public function editer(int $id): void {
+    public function editer(string|int $id): void {
         Auth::verifierDroit('STRUCTURE_MODIFIER');
+        $id = (int)$id;
         $produit = $this->produitModel->trouverParId($id);
         if (!$produit) {
             $_SESSION['erreur'] = "Produit introuvable.";
             $this->redirigerVers('/structure/produits');
             return;
         }
-        $familles      = $this->familleModel->listerTout();
+
+        // --- CAS PRODUIT FILS OU SIMPLE : On cherche s'il possède une relation de parenté ---
+        // Même si est_pere est faux, on interroge la table pivot fractions_produit
+        $sqlParent = "SELECT produit_pere_id, quantite_fils FROM fractions_produit WHERE produit_fils_id = :id";
+        $liaison = \Database::query($sqlParent, [':id' => $id])->fetch();
+        
+        if ($liaison) {
+            $produit['parent_id'] = $liaison['produit_pere_id'];
+            $produit['quantite_fils'] = $liaison['quantite_fils'];
+        } else {
+            // Produit simple ou père : pas de parent initial
+            $produit['parent_id'] = null;
+            $produit['quantite_fils'] = 1;
+        }
+
+        $familles = $this->familleModel->listerTout();
         $produitsPeres = $this->produitModel->listerProduitsPeres();
+
         $this->rendrePage('structure', 'produits/formulaire', [
-            'titre'        => 'Modifier le produit',
-            'produit'      => $produit,
-            'familles'     => $familles,
-            'produitsPeres'=> $produitsPeres,
-            'etape'        => null,
-            'moduleActif'  => 'structure',
-            'moduleAssets' => 'structure',
+            'titre'         => 'Modifier le produit',
+            'produit'       => $produit,
+            'familles'      => $familles,
+            'produitsPeres' => $produitsPeres,
+            'moduleActif'   => 'structure',
+            'moduleAssets'  => 'structure',
         ]);
     }
 
@@ -170,63 +186,28 @@ class ProduitController extends Controller
     }
 
     // ── Suppression avec archivage en corbeille (père + fils) ───────────────
-    public function supprimer(int $id): void {
+    public function supprimer(string|int $id): void {
         Auth::verifierDroit('STRUCTURE_SUPPRIMER');
-        $this->verifierMethode('POST');
+        $id = (int)$id;
 
-        $produit = $this->produitModel->trouverParId($id);
-        if (!$produit) {
-            $_SESSION['erreur'] = "Produit introuvable.";
-            $this->redirigerVers('/structure/produits');
-            return;
+        try {
+            // 1. Préparer et ramasser toutes les données nécessaires pour l'archive
+            $donneesArchive = $this->produitModel->preparerSuppressionEtRecupererDonnees($id);
+            $produit = $donneesArchive['principal'];
+
+            // 2. Archiver dans la corbeille au format XML avant la suppression physique
+            $libelle = $produit['designation'] . " (" . $produit['code'] . ")";
+            Corbeille::archiver('produits', $produit, $donneesArchive['liees'], $libelle);
+
+            // 3. Exécuter la suppression en cascade (physique)
+            $estPere = ((int)$produit['est_pere'] === 1);
+            $this->produitModel->supprimerEnCascade($id, $estPere);
+
+            $_SESSION['succes'] = "Produit mis à la corbeille avec succès.";
+        } catch (\Exception $e) {
+            $_SESSION['erreur'] = "Erreur lors de la suppression : " . $e->getMessage();
         }
 
-        $liees = [];
-
-        // Récupérer les produits fils (via fractions_produit)
-        $fils = $this->produitModel->listerFilsParProduitPere($id);
-        
-        if (!empty($fils)) {
-            $liees['produits_fils'] = [];
-            
-            foreach ($fils as $filsProduit) {
-                // Archiver le produit fils
-                Corbeille::archiver(
-                    'produits',
-                    $filsProduit,
-                    [],
-                    $filsProduit['code'] . ' — ' . $filsProduit['designation']
-                );
-                $liees['produits_fils'][] = $filsProduit;
-            }
-        }
-
-        // Récupérer les fractions du produit père
-        $sqlFractions = "SELECT * FROM fractions_produit WHERE produit_pere_id = :id";
-        $fractions = \Database::query($sqlFractions, [':id' => $id])->fetchAll();
-        if (!empty($fractions)) {
-            $liees['fractions_produit'] = $fractions;
-        }
-
-        // Archiver le produit père
-        Corbeille::archiver(
-            'produits',
-            $produit,
-            $liees,
-            $produit['code'] . ' — ' . $produit['designation']
-        );
-
-        // Supprimer les produits fils
-        if (!empty($fils)) {
-            foreach ($fils as $filsProduit) {
-                $this->produitModel->supprimer($filsProduit['id']);
-            }
-        }
-
-        // Supprimer le produit père
-        $this->produitModel->supprimer($id);
-        
-        $_SESSION['succes'] = "Produit père et ses " . count($fils) . " fils supprimés et archivés.";
         $this->redirigerVers('/structure/produits');
     }
 
