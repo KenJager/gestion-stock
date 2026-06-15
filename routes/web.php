@@ -161,7 +161,6 @@ Router::get( '/appros/etats/annuel',           'approvisionnements\controllers\E
 Router::get( '/appros/etats/journalier/pdf',   'approvisionnements\controllers\EtatController@journalierPdf');
 Router::get( '/appros/etats/annuel/pdf',       'approvisionnements\controllers\EtatController@annuelPdf');
 
-
 // ============================================================================
 // MODULE VENTES — Groupe 2
 // ============================================================================
