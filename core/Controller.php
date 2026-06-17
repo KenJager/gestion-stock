@@ -9,6 +9,7 @@ abstract class Controller {
         Auth::verifierConnexion();
         $this->utilisateurCourant = Auth::utilisateurCourant();
     }
+    ///pour faire de nuveau comits , il vas faloir signaler au autre menbre
 
     /**
      * Rend une vue dans le layout principal via ob_start().
@@ -31,7 +32,7 @@ abstract class Controller {
 
         // Variables disponibles dans base.php
         $titrePage   = $donnees['titre'] ?? APP_NOM;
-        $moduleActif = $module;
+        $moduleActif = $donnees['moduleActif'] ?? $module;
 
         require ROOT . '/views/layouts/base.php';
     }
