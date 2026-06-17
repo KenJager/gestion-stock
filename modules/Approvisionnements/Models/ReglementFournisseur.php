@@ -1,0 +1,64 @@
+<?php
+// modules/Approvisionnements/Models/ReglementFournisseur.php
+
+namespace Approvisionnements\Models;
+
+use \Model;
+use \Database;
+
+class ReglementFournisseur extends Model {
+    
+    protected string $table = 'reglements_fournisseur';
+    
+    /**
+     * Liste tous les règlements avec les infos de la facture et du fournisseur
+     */
+    public function listerTout(): array {
+        $sql = "SELECT r.*, f.numero AS facture_numero,
+                       fr.raison_sociale AS fournisseur_nom
+                FROM " . $this->table . " r
+                JOIN factures_fournisseur f ON f.id = r.facture_id
+                JOIN fournisseurs fr ON fr.id = f.fournisseur_id
+                ORDER BY r.date_reglement DESC";
+        
+        $resultat = $this->requete($sql);
+        return $resultat->toutRecuperer();
+    }
+    
+    /**
+     * Récupère un règlement par son ID
+     */
+    public function trouverParId(int $id): array|false {
+        $sql = "SELECT r.*, f.numero AS facture_numero,
+                       fr.raison_sociale AS fournisseur_nom
+                FROM " . $this->table . " r
+                JOIN factures_fournisseur f ON f.id = r.facture_id
+                JOIN fournisseurs fr ON fr.id = f.fournisseur_id
+                WHERE r.id = :id";
+        
+        $resultat = $this->requete($sql, [':id' => $id]);
+        return $resultat->unRecuperer();
+    }
+    
+    /**
+     * Crée un règlement
+     */
+    public function creer(array $donnees): int {
+        $sql = "INSERT INTO " . $this->table . " 
+                (facture_id, date_reglement, montant, mode_paiement, reference, banque_id, notes)
+                VALUES (:facture_id, :date_reglement, :montant, :mode_paiement, :reference, :banque_id, :notes)
+                RETURNING id";
+        
+        $resultat = $this->requete($sql, $donnees);
+        $row = $resultat->unRecuperer();
+        return (int) $row['id'];
+    }
+    
+    /**
+     * Supprime un règlement
+     */
+    public function supprimer(int $id): void {
+        $sql = "DELETE FROM " . $this->table . " WHERE id = :id";
+        $this->requete($sql, [':id' => $id]);
+    }
+}

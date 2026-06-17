@@ -25,6 +25,9 @@ $navItems = [
             ['libelle' => 'Bons de réception',      'chemin' => '/approvisionnements/receptions'],
             ['libelle' => 'Factures fournisseurs',  'chemin' => '/approvisionnements/factures'],
             ['libelle' => 'Entrées (dons)',         'chemin' => '/approvisionnements/dons'],
+            ['separateur' => 'États'],
+            ['libelle' => 'État journalier',        'chemin' => '/appros/etats/journalier'],
+            ['libelle' => 'État annuel',            'chemin' => '/appros/etats/annuel'],
         ],
     ],
     [

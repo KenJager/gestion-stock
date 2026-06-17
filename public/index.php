@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 // public/index.php — Point d'entrée unique
 // ============================================================================
 
@@ -7,7 +10,7 @@ define('ROOT',     dirname(__DIR__));
 define('APP_NOM',  'SGestion');
 
 // BASE_URL : adapter selon l'environnement (ou surcharger via .env)
-define('BASE_URL', rtrim(getenv('APP_URL') ?: 'http://localhost/public', '/'));
+define('BASE_URL', rtrim(getenv('APP_URL') ?: 'http://localhost:8000', '/'));
 
 // ── 2. Rapport d'erreurs (masqué en production via .env APP_ENV=production) ──
 $env = getenv('APP_ENV') ?: 'development';
@@ -40,33 +43,31 @@ if (file_exists($envFile)) {
 }
 
 // ── 4. Autoloader PSR-4 simplifié ────────────────────────────────────────────
-//
-//  Conventions de nommage :
-//  - Classes core (sans namespace)   → core/NomClasse.php
-//  - Modules avec namespace          → modules/{Module}/Controllers/Xxx.php
-//    ex: Utilisateurs\Controllers\AuthController → modules/Utilisateurs/Controllers/AuthController.php
-//
 spl_autoload_register(function (string $classe): void {
 
-    // Classes core — sans namespace (Auth, Database, Router, Controller, Model…)
-    if (!str_contains($classe, '\\')) {
-        $fichier = ROOT . "/core/{$classe}.php";
+    // 🔥 Gérer les classes core (sans namespace ou avec namespace Core\)
+    if (!str_contains($classe, '\\') || str_starts_with($classe, 'Core\\')) {
+        $nomClasse = str_replace('Core\\', '', $classe);
+        $fichier = ROOT . "/core/{$nomClasse}.php";
         if (file_exists($fichier)) {
             require_once $fichier;
             return;
         }
     }
 
-    // Classes de modules — namespace correspond à la structure de dossiers
-    // "Utilisateurs\Controllers\AuthController" → modules/Utilisateurs/Controllers/AuthController.php
-    $chemin  = str_replace('\\', DIRECTORY_SEPARATOR, $classe);
+    // 🔥 Enlever le préfixe "Modules\" si présent (pour compatibilité)
+    if (str_starts_with($classe, 'Modules\\')) {
+        $classe = substr($classe, 8);
+    }
+
+    // Classes de modules
+    $chemin = str_replace('\\', DIRECTORY_SEPARATOR, $classe);
     $fichier = ROOT . '/modules/' . $chemin . '.php';
     if (file_exists($fichier)) {
         require_once $fichier;
         return;
     }
 });
-
 // ── 5. Chargement du core (ordre important) ──────────────────────────────────
 require_once ROOT . '/core/Database.php';
 require_once ROOT . '/core/Auth.php';
@@ -84,4 +85,5 @@ Auth::demarrer();
 require ROOT . '/routes/web.php';
 
 // ── 9. Dispatch ──────────────────────────────────────────────────────────────
-Router::dispatcher();
+// ── 9. Dispatch ──────────────────────────────────────────────────────────────
+Router::dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
