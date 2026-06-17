@@ -71,4 +71,16 @@ class Database {
     public static function annulerTransaction(): void {
         self::connexion()->rollBack();
     }
+
+    /**
+     * Définit les variables de session PostgreSQL utilisées par fn_audit_log()
+     * pour tracer utilisateur_id et login_utilisateur dans audit_log.
+     */
+    public static function definirUtilisateurAudit(?int $utilisateurId, ?string $login): void {
+        $pdo = self::connexion();
+        $pdo->exec("SELECT set_config('app.utilisateur_id', "
+            . $pdo->quote((string)($utilisateurId ?? '')) . ", false)");
+        $pdo->exec("SELECT set_config('app.login_utilisateur', "
+            . $pdo->quote($login ?? '') . ", false)");
+    }
 }

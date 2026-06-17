@@ -31,26 +31,31 @@
 })();
 
 // ============================================================
-// 2. CONFIRMATION AVANT SUPPRESSION
+// 2. CONFIRMATION AVANT SUPPRESSION (VERSION CORRIGÉE)
 // ============================================================
 (function gererSuppression() {
+    // Utiliser la phase de capture pour être SÛR d'intercepter AVANT les autres scripts
     document.addEventListener('submit', function(e) {
         const form = e.target;
-        if (!form.dataset.confirmer) return;
-        const msg = form.dataset.confirmer || 'Confirmer la suppression ?';
-        if (!window.confirm(msg)) {
+        
+        // Vérifie si le formulaire a l'attribut data-confirmer
+        if (!form.hasAttribute('data-confirmer')) return;
+        
+        const msg = form.getAttribute('data-confirmer');
+        
+        // AFFICHER LA POPUP DE CONFIRMATION
+        const confirmation = confirm(msg);
+        
+        if (!confirmation) {
+            // L'utilisateur a annulé - on bloque l'envoi
             e.preventDefault();
+            e.stopPropagation();
+            return false;
         }
-    });
-
-    document.addEventListener('click', function(e) {
-        const lien = e.target.closest('[data-confirmer-lien]');
-        if (!lien) return;
-        const msg = lien.dataset.confirmerLien || 'Confirmer ?';
-        if (!window.confirm(msg)) {
-            e.preventDefault();
-        }
-    });
+        
+        // L'utilisateur a confirmé - le formulaire sera soumis normalement
+        return true;
+    }, true); // true = phase de capture (exécuté en premier)
 })();
 
 // ============================================================
