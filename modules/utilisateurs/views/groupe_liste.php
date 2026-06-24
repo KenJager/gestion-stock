@@ -52,12 +52,12 @@
                         <td><span class="badge badge-valide"><?= (int) $g['nb_utilisateurs'] ?></span></td>
                         <td class="text-right" style="white-space:nowrap;">
                             <a href="<?= BASE_URL ?>/groupes/<?= $g['id'] ?>/droits"
-                               class="btn btn-outline btn-sm" title="Gérer les droits">
+                               class="btn btn-outline" title="Gérer les droits">
                                 <i class="fa-solid fa-shield-halved"></i> Droits
                             </a>
                             <?php if (\Auth::peut('USERS_MODIFIER')): ?>
                                 <a href="<?= BASE_URL ?>/groupes/<?= $g['id'] ?>/modifier"
-                                   class="btn btn-secondary btn-sm" title="Modifier">
+                                   class="btn btn-secondary" title="Modifier">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </a>
                             <?php endif; ?>
@@ -65,7 +65,7 @@
                                 <form action="<?= BASE_URL ?>/groupes/<?= $g['id'] ?>/supprimer"
                                       method="POST" style="display:inline;"
                                       onsubmit="return confirm('Supprimer ce groupe ?');">
-                                    <button type="submit" class="btn btn-danger btn-sm" title="Supprimer"
+                                    <button type="submit" class="btn btn-danger" title="Supprimer"
                                         <?= (int)$g['nb_utilisateurs'] > 0 ? 'disabled' : '' ?>>
                                         <i class="fa-solid fa-trash"></i>
                                     </button>

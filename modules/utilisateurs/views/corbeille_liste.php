@@ -67,7 +67,7 @@ function libelleTable(string $table): string {
                                 <form action="<?= BASE_URL ?>/utilisateurs/corbeille/restaurer" method="POST" style="display:inline;"
                                       onsubmit="return confirm('Restaurer cet élément ?');">
                                     <input type="hidden" name="fichier" value="<?= htmlspecialchars($e['fichier']) ?>">
-                                    <button type="submit" class="btn btn-secondary btn-sm" title="Restaurer">
+                                    <button type="submit" class="btn btn-secondary" title="Restaurer">
                                         <i class="fa-solid fa-rotate-left"></i> Restaurer
                                     </button>
                                 </form>
@@ -76,7 +76,7 @@ function libelleTable(string $table): string {
                                 <form action="<?= BASE_URL ?>/utilisateurs/corbeille/purger" method="POST" style="display:inline;"
                                       onsubmit="return confirm('Supprimer définitivement ? Action irréversible.');">
                                     <input type="hidden" name="fichier" value="<?= htmlspecialchars($e['fichier']) ?>">
-                                    <button type="submit" class="btn btn-danger btn-sm" title="Supprimer définitivement">
+                                    <button type="submit" class="btn btn-danger" title="Supprimer définitivement">
                                         <i class="fa-solid fa-trash-can"></i>
                                     </button>
                                 </form>

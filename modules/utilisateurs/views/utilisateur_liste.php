@@ -67,7 +67,7 @@
                         <td class="text-right" style="white-space:nowrap;">
                             <?php if (\Auth::peut('USERS_MODIFIER')): ?>
                                 <a href="<?= BASE_URL ?>/utilisateurs/<?= $u['id'] ?>/modifier"
-                                   class="btn btn-secondary btn-sm" title="Modifier">
+                                   class="btn btn-secondary" title="Modifier">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </a>
                             <?php endif; ?>
@@ -75,7 +75,7 @@
                                 <form action="<?= BASE_URL ?>/utilisateurs/<?= $u['id'] ?>/supprimer"
                                       method="POST" style="display:inline;"
                                       onsubmit="return confirm('Supprimer cet utilisateur ?');">
-                                    <button type="submit" class="btn btn-danger btn-sm" title="Supprimer">
+                                    <button type="submit" class="btn btn-danger" title="Supprimer">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
                                 </form>

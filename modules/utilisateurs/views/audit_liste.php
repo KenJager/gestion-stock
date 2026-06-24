@@ -101,7 +101,7 @@ function badgeOperation(string $op): string {
                             <?php endif; ?>
                         </td>
                         <td>
-                            <button type="button" class="btn btn-outline btn-sm"
+                            <button type="button" class="btn btn-outline"
                                     onclick="const e=document.getElementById('detail-<?= $i ?>'); e.style.display = e.style.display === 'none' ? 'block' : 'none';">
                                 <i class="fa-solid fa-eye"></i> Voir
                             </button>
@@ -144,11 +144,11 @@ function badgeOperation(string $op): string {
                 $query['page'] = min($totalPages, $page + 1);
                 $hrefSuiv = BASE_URL . '/audit?' . http_build_query($query);
             ?>
-            <a href="<?= $hrefPrec ?>" class="btn btn-secondary btn-sm <?= $page <= 1 ? 'disabled' : '' ?>"
+            <a href="<?= $hrefPrec ?>" class="btn btn-secondary <?= $page <= 1 ? 'disabled' : '' ?>"
                <?= $page <= 1 ? 'style="pointer-events:none; opacity:0.5;"' : '' ?>>
                 <i class="fa-solid fa-chevron-left"></i> Précédent
             </a>
-            <a href="<?= $hrefSuiv ?>" class="btn btn-secondary btn-sm <?= $page >= $totalPages ? 'disabled' : '' ?>"
+            <a href="<?= $hrefSuiv ?>" class="btn btn-secondary <?= $page >= $totalPages ? 'disabled' : '' ?>"
                <?= $page >= $totalPages ? 'style="pointer-events:none; opacity:0.5;"' : '' ?>>
                 Suivant <i class="fa-solid fa-chevron-right"></i>
             </a>
