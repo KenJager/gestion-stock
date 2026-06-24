@@ -117,49 +117,81 @@ Router::post('/structure/versements/supprimer/{id}', 'structure\controllers\Vers
 // ============================================================================
 
 // Bons de commande fournisseur
-Router::get( '/appros/commandes',              'approvisionnements\controllers\BonCommandeController@index');
-Router::get( '/appros/commandes/creer',        'approvisionnements\controllers\BonCommandeController@creer');
-Router::post('/appros/commandes/creer',        'approvisionnements\controllers\BonCommandeController@enregistrer');
-Router::get( '/appros/commandes/{id}',         'approvisionnements\controllers\BonCommandeController@detail');
-Router::get( '/appros/commandes/{id}/modifier','approvisionnements\controllers\BonCommandeController@editer');
-Router::post('/appros/commandes/{id}/modifier','approvisionnements\controllers\BonCommandeController@mettreAJour');
-Router::post('/appros/commandes/{id}/supprimer','approvisionnements\controllers\BonCommandeController@supprimer');
-Router::get( '/appros/commandes/{id}/pdf',     'approvisionnements\controllers\BonCommandeController@pdf');
+Router::get( '/appros/commandes',                   'approvisionnements\controllers\BonCommandeController@index');
+Router::get( '/appros/commandes/creer',             'approvisionnements\controllers\BonCommandeController@creer');
+Router::post('/appros/commandes/creer',             'approvisionnements\controllers\BonCommandeController@enregistrer');
+Router::get( '/appros/commandes/{id}',              'approvisionnements\controllers\BonCommandeController@detail');
+Router::get( '/appros/commandes/{id}/modifier',     'approvisionnements\controllers\BonCommandeController@editer');
+Router::post('/appros/commandes/{id}/modifier',     'approvisionnements\controllers\BonCommandeController@mettreAJour');
+Router::post('/appros/commandes/{id}/valider',      'approvisionnements\controllers\BonCommandeController@valider');
+Router::post('/appros/commandes/{id}/annuler',      'approvisionnements\controllers\BonCommandeController@annuler');
+Router::post('/appros/commandes/{id}/supprimer',    'approvisionnements\controllers\BonCommandeController@supprimer');
+Router::get( '/appros/commandes/{id}/pdf',          'approvisionnements\controllers\BonCommandeController@pdf');
 
 // Bons de réception
+Router::get( '/appros/receptions/get-commande/{id}', 'approvisionnements\controllers\BonReceptionController@getCommande');
 Router::get( '/appros/receptions',             'approvisionnements\controllers\BonReceptionController@index');
 Router::get( '/appros/receptions/creer',       'approvisionnements\controllers\BonReceptionController@creer');
 Router::post('/appros/receptions/creer',       'approvisionnements\controllers\BonReceptionController@enregistrer');
 Router::get( '/appros/receptions/{id}',        'approvisionnements\controllers\BonReceptionController@detail');
 Router::get( '/appros/receptions/{id}/pdf',    'approvisionnements\controllers\BonReceptionController@pdf');
 
-// Factures fournisseurs
-Router::get( '/appros/factures',               'approvisionnements\controllers\FactureFournisseurController@index');
-Router::get( '/appros/factures/{id}',          'approvisionnements\controllers\FactureFournisseurController@detail');
-Router::get( '/appros/factures/{id}/modifier', 'approvisionnements\controllers\FactureFournisseurController@editer');
-Router::post('/appros/factures/{id}/modifier', 'approvisionnements\controllers\FactureFournisseurController@mettreAJour');
-Router::get( '/appros/factures/{id}/pdf',      'approvisionnements\controllers\FactureFournisseurController@pdf');
+// Routes supplémentaires pour les réceptions
+Router::get( '/appros/receptions/{id}/modifier', 'approvisionnements\controllers\BonReceptionController@editer');
+Router::post('/appros/receptions/{id}/modifier', 'approvisionnements\controllers\BonReceptionController@mettreAJour');
+Router::post('/appros/receptions/{id}/supprimer', 'approvisionnements\controllers\BonReceptionController@supprimer');
+Router::get( '/appros/receptions/get-montants/{id}', 'approvisionnements\controllers\BonReceptionController@getMontants');
 
-// Règlements fournisseurs
-Router::get( '/appros/reglements',             'approvisionnements\controllers\ReglementFournisseurController@index');
-Router::post('/appros/reglements/creer',       'approvisionnements\controllers\ReglementFournisseurController@enregistrer');
-Router::get( '/appros/reglements/{id}/recu',   'approvisionnements\controllers\ReglementFournisseurController@recu');
+
 
 // Entrées dons
-Router::get( '/appros/dons',                   'approvisionnements\controllers\DonController@index');
-Router::get( '/appros/dons/creer',             'approvisionnements\controllers\DonController@creer');
-Router::post('/appros/dons/creer',             'approvisionnements\controllers\DonController@enregistrer');
-Router::get( '/appros/dons/{id}/pdf',          'approvisionnements\controllers\DonController@pdf');
+Router::get( '/appros/dons',                     'approvisionnements\controllers\DonController@index');
+Router::get( '/appros/dons/creer',               'approvisionnements\controllers\DonController@creer');
+Router::post('/appros/dons/creer',               'approvisionnements\controllers\DonController@enregistrer');
+Router::get( '/appros/dons/{id}',                'approvisionnements\controllers\DonController@detail');
+Router::get( '/appros/dons/{id}/modifier',       'approvisionnements\controllers\DonController@editer');
+Router::post('/appros/dons/{id}/modifier',       'approvisionnements\controllers\DonController@mettreAJour');
+Router::post('/appros/dons/{id}/supprimer',      'approvisionnements\controllers\DonController@supprimer');
+Router::get( '/appros/dons/{id}/pdf',            'approvisionnements\controllers\DonController@pdf');
 
-// Bons d'entrée
-Router::get( '/appros/bons-entree',            'approvisionnements\controllers\BonEntreeController@index');
-Router::get( '/appros/bons-entree/{id}/pdf',   'approvisionnements\controllers\BonEntreeController@pdf');
+
+// FACTURES FOURNISSEURS
+
+// Routes spécifiques (DOIVENT être avant la route {id})
+Router::get( '/appros/factures/creer',             'approvisionnements\controllers\FactureFournisseurController@creer');
+Router::post('/appros/factures/creer',             'approvisionnements\controllers\FactureFournisseurController@enregistrer');
+Router::post('/appros/factures/{id}/supprimer',    'approvisionnements\controllers\FactureFournisseurController@supprimer');
+
+// Routes génériques (avec paramètres)
+Router::get( '/appros/factures',                   'approvisionnements\controllers\FactureFournisseurController@index');
+Router::get( '/appros/factures/{id}',              'approvisionnements\controllers\FactureFournisseurController@detail');
+Router::get( '/appros/factures/{id}/modifier',     'approvisionnements\controllers\FactureFournisseurController@editer');
+Router::post('/appros/factures/{id}/modifier',     'approvisionnements\controllers\FactureFournisseurController@mettreAJour');
+Router::get( '/appros/factures/{id}/pdf',          'approvisionnements\controllers\FactureFournisseurController@pdf');
+
+// RÈGLEMENTS FOURNISSEURS
+
+// Routes spécifiques (DOIVENT être avant les routes avec paramètres)
+Router::get( '/appros/reglements/creer',           'approvisionnements\controllers\ReglementFournisseurController@creer');
+Router::post('/appros/reglements/creer',           'approvisionnements\controllers\ReglementFournisseurController@enregistrer');
+Router::post('/appros/reglements/{id}/supprimer',  'approvisionnements\controllers\ReglementFournisseurController@supprimer');
+
+// Routes génériques
+Router::get( '/appros/reglements',                 'approvisionnements\controllers\ReglementFournisseurController@index');
+Router::get( '/appros/reglements/{id}/recu',       'approvisionnements\controllers\ReglementFournisseurController@recu');
+
 
 // États / rapports
+
 Router::get( '/appros/etats/journalier',       'approvisionnements\controllers\EtatController@journalier');
 Router::get( '/appros/etats/annuel',           'approvisionnements\controllers\EtatController@annuel');
 Router::get( '/appros/etats/journalier/pdf',   'approvisionnements\controllers\EtatController@journalierPdf');
 Router::get( '/appros/etats/annuel/pdf',       'approvisionnements\controllers\EtatController@annuelPdf');
+
+Router::get( '/appros/archives',                    'approvisionnements\controllers\ArchiveController@index');
+Router::get( '/appros/archives/{filename}',         'approvisionnements\controllers\ArchiveController@detail');
+Router::post('/appros/archives/{filename}/restaurer', 'approvisionnements\controllers\ArchiveController@restaurer');
+Router::post('/appros/archives/{filename}/supprimer', 'approvisionnements\controllers\ArchiveController@supprimerArchive');
 
 
 // ============================================================================

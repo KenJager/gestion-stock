@@ -158,13 +158,55 @@ function indicateurEtapes(int $etapeCourante): void {
             <!-- Option : produit père -->
             <label class="flex items-start gap-2 cursor-pointer group mt-2">
                 <input type="checkbox" name="est_pere" value="1" id="checkbox-est-pere"
-                       class="mt-0.5 rounded border-gray-300 text-gray-900 focus:ring-gray-400"
-                       <?= $estPere ? 'checked' : '' ?>>
+                    class="mt-0.5 rounded border-gray-300 text-gray-900 focus:ring-gray-400"
+                    <?= $estPere ? 'checked' : '' ?>>
                 <span class="text-sm font-medium text-gray-800 group-hover:text-gray-900">
                     Produit père (fractionnable)
                 </span>
             </label>
-            
+
+            <?php if ($estEdition): ?>
+                <!-- Alertes pour les transitions -->
+                <?php 
+                    $ancienEstPere = isset($produit['est_pere']) && (int)$produit['est_pere'] === 1;
+                    $estActuellementFils = isset($produit['parent_id']) && !empty($produit['parent_id']);
+                ?>
+                
+                <?php if ($ancienEstPere): ?>
+                    <div class="rounded-md bg-amber-50 border border-amber-200 p-3 flex items-center gap-3 mt-2">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-500 text-sm"></i>
+                        <p class="text-xs text-amber-700">
+                            <strong>Attention :</strong> Ce produit est actuellement un <strong>produit père</strong>.
+                            <?php if (!$estPere): ?>
+                                Si vous le passez en produit fils/simple, <strong>tous ses fils seront supprimés</strong> de la relation.
+                            <?php endif; ?>
+                        </p>
+                    </div>
+                <?php endif; ?>
+                
+                <?php if ($estActuellementFils && !$estPere): ?>
+                    <div class="rounded-md bg-blue-50 border border-blue-200 p-3 flex items-center gap-3 mt-2">
+                        <i class="fa-solid fa-info-circle text-blue-500 text-sm"></i>
+                        <p class="text-xs text-blue-700">
+                            Ce produit est actuellement un <strong>produit fils</strong>. 
+                            Vous pouvez changer son père ou en faire un produit père.
+                        </p>
+                    </div>
+                <?php endif; ?>
+                
+                <?php if (!$ancienEstPere && $estPere): ?>
+                    <div class="rounded-md bg-green-50 border border-green-200 p-3 flex items-center gap-3 mt-2">
+                        <i class="fa-solid fa-arrow-right text-green-500 text-sm"></i>
+                        <p class="text-xs text-green-700">
+                            Ce produit va devenir un <strong>produit père</strong>. 
+                            <?php if ($estActuellementFils): ?>
+                                Il sera retiré de sa relation de fils existante.
+                            <?php endif; ?>
+                        </p>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
+
             <?php if ($estEdition && $estFils): ?>
             <div class="rounded-md bg-blue-50 border border-blue-200 p-3 flex items-center gap-3 mt-2">
                 <i class="fa-solid fa-code-branch text-blue-500 text-sm"></i>
@@ -189,18 +231,20 @@ function indicateurEtapes(int $etapeCourante): void {
                         <option value="<?= $p['id'] ?>" <?= $selected ?>><?= htmlspecialchars($p['designation']) ?> (<?= htmlspecialchars($p['code']) ?>)</option>
                     <?php endforeach; ?>
                 </select>
+                <p class="text-xs text-gray-400 mt-1">
+                    Sélectionnez un produit père pour que ce produit devienne un produit fils.
+                </p>
             </div>
 
             <div class="mt-2" id="bloc-quantite-fils" style="<?= !$estFils ? 'display:none;' : '' ?>">
                 <label class="label">Quantité par père</label>
                 <input type="number" name="quantite_fils" id="input-quantite-fils" step="1" min="1" 
-                    class="input max-w-xs" value="<?= htmlspecialchars($quantite_fils_val) ?>" <?= !$estFils ? 'disabled' : '' ?>>
+                    class="input max-w-xs" value="<?= htmlspecialchars($produit['quantite_fils'] ?? 1) ?>" <?= !$estFils ? 'disabled' : '' ?>>
                 <p class="text-xs text-gray-400 mt-1">
                     Nombre d'unités de ce produit dans une unité du produit père.
                     Exemple: 12 morceaux par carton.
                 </p>
             </div>
-        </div>
 
         <?php endif; /* fin étape 1 / édition */ ?>
 

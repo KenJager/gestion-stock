@@ -1,11 +1,11 @@
 -- ============================================================================
--- SCRIPT COMPLET D'INITIALISATION - 4 GROUPES UNIQUEMENT
+-- SCRIPT COMPLET DE SEED DATA - GESTION DE STOCK
 -- ============================================================================
 
 BEGIN;
 
 -- ============================================================================
--- 1. CRÉATION DES GROUPES (4 groupes uniquement)
+-- 1. GROUPES D'UTILISATEURS (4 groupes)
 -- ============================================================================
 
 INSERT INTO public.groupes_utilisateurs (nom, description) VALUES
@@ -16,7 +16,7 @@ INSERT INTO public.groupes_utilisateurs (nom, description) VALUES
 ON CONFLICT (nom) DO NOTHING;
 
 -- ============================================================================
--- 2. CRÉATION DES UTILISATEURS
+-- 2. UTILISATEURS
 -- ============================================================================
 
 INSERT INTO public.utilisateurs (nom, prenom, login, mot_de_passe, email, groupe_id, actif) VALUES
@@ -31,7 +31,7 @@ INSERT INTO public.utilisateurs (nom, prenom, login, mot_de_passe, email, groupe
 ON CONFLICT (login) DO NOTHING;
 
 -- ============================================================================
--- 3. CRÉATION DES DROITS (4 modules)
+-- 3. DROITS (4 modules)
 -- ============================================================================
 
 INSERT INTO public.droits (code, module, description) VALUES
@@ -220,7 +220,429 @@ WHERE p1.code = 'LAIT-CARTON' AND p2.code = 'LAIT-BOITE'
 ON CONFLICT (produit_pere_id, produit_fils_id) DO NOTHING;
 
 -- ============================================================================
--- 12. VÉRIFICATION FINALE
+-- 12. NETTOYAGE DES DONNÉES DE TEST EXISTANTES
+-- ============================================================================
+
+DELETE FROM public.mouvements_stock 
+WHERE source IN ('BON_RECEPTION', 'BON_LIVR_CLIENT', 'VENTE_COMPTANT')
+  AND (source_id IN (SELECT id FROM public.bons_reception WHERE numero LIKE 'BR-2026-%')
+       OR source_id IN (SELECT id FROM public.bons_livraison_client WHERE numero LIKE 'BL-2026-%')
+       OR source_id IN (SELECT id FROM public.ventes_comptant WHERE numero LIKE 'VTC-2026-00%'));
+
+DELETE FROM public.lignes_reception WHERE bon_reception_id IN (SELECT id FROM public.bons_reception WHERE numero LIKE 'BR-2026-%');
+DELETE FROM public.lignes_commande_fournisseur WHERE bon_commande_id IN (SELECT id FROM public.bons_commande_fournisseur WHERE numero LIKE 'BCF-2026-%');
+DELETE FROM public.lignes_livraison_client WHERE bon_livraison_id IN (SELECT id FROM public.bons_livraison_client WHERE numero LIKE 'BL-2026-%');
+DELETE FROM public.lignes_commande_client WHERE bon_commande_id IN (SELECT id FROM public.bons_commande_client WHERE numero LIKE 'BCC-2026-%');
+DELETE FROM public.lignes_vente_comptant WHERE vente_comptant_id IN (SELECT id FROM public.ventes_comptant WHERE numero LIKE 'VTC-2026-00%');
+
+DELETE FROM public.reglements_fournisseur WHERE facture_id IN (SELECT id FROM public.factures_fournisseur WHERE numero LIKE 'FAC-FOUR-9989%');
+DELETE FROM public.reglements_client WHERE facture_id IN (SELECT id FROM public.factures_client WHERE numero LIKE 'FAC-CLI-2026-%');
+
+DELETE FROM public.factures_fournisseur WHERE numero LIKE 'FAC-FOUR-9989%';
+DELETE FROM public.factures_client WHERE numero LIKE 'FAC-CLI-2026-%';
+
+DELETE FROM public.bons_reception WHERE numero LIKE 'BR-2026-%';
+DELETE FROM public.bons_livraison_client WHERE numero LIKE 'BL-2026-%';
+DELETE FROM public.bons_commande_fournisseur WHERE numero LIKE 'BCF-2026-%';
+DELETE FROM public.bons_commande_client WHERE numero LIKE 'BCC-2026-%';
+DELETE FROM public.ventes_comptant WHERE numero LIKE 'VTC-2026-00%';
+
+-- ============================================================================
+-- 13. APPROVISIONNEMENTS - COMMANDE CHOCOCAM (FOUR-002)
+-- ============================================================================
+
+DO $$
+DECLARE
+    v_fournisseur_chococam INT;
+    v_user_logis INT;
+    v_user_compta INT;
+    v_banque_bicec INT;
+    v_produit_choc_tart INT;
+    v_produit_choc_tab INT;
+    v_produit_choc_poudre INT;
+    v_bc_id INT;
+    v_br_id INT;
+    v_ff_id INT;
+BEGIN
+    SELECT id INTO v_fournisseur_chococam FROM public.fournisseurs WHERE code = 'FOUR-002';
+    SELECT id INTO v_user_logis FROM public.utilisateurs WHERE login = 'logis';
+    SELECT id INTO v_user_compta FROM public.utilisateurs WHERE login = 'compta';
+    SELECT id INTO v_banque_bicec FROM public.banques WHERE code = 'BICEC';
+    SELECT id INTO v_produit_choc_tart FROM public.produits WHERE code = 'CHOC-TART-1KG';
+    SELECT id INTO v_produit_choc_tab FROM public.produits WHERE code = 'CHOC-TAB-100G';
+    SELECT id INTO v_produit_choc_poudre FROM public.produits WHERE code = 'CHOC-POUDRE';
+
+    -- Bons de commande fournisseur
+    INSERT INTO public.bons_commande_fournisseur (numero, fournisseur_id, date_commande, date_livraison_prevue, statut, montant_ht, montant_tva, montant_ttc, notes, utilisateur_id) 
+    VALUES ('BCF-2026-002', v_fournisseur_chococam, '2026-02-01', '2026-02-10', 'LIVRÉ', 125000.00, 24062.50, 149062.50, 'Commande chocolats pour saison des vacances', v_user_logis)
+    ON CONFLICT (numero) DO NOTHING RETURNING id INTO v_bc_id;
+
+    IF v_bc_id IS NOT NULL THEN
+        -- Lignes commande
+        INSERT INTO public.lignes_commande_fournisseur (bon_commande_id, produit_id, quantite_commandee, quantite_recue, prix_unitaire_ht, tva) VALUES
+        (v_bc_id, v_produit_choc_tart, 20.000, 20.000, 2500.00, 19.25),
+        (v_bc_id, v_produit_choc_tab, 30.000, 30.000, 250.00, 19.25),
+        (v_bc_id, v_produit_choc_poudre, 20.000, 20.000, 600.00, 19.25);
+
+        -- Réception
+        INSERT INTO public.bons_reception (numero, bon_commande_id, fournisseur_id, date_reception, statut, notes, utilisateur_id) 
+        VALUES ('BR-2026-002', v_bc_id, v_fournisseur_chococam, '2026-02-09', 'REÇU', 'Conforme, vérifié par magasinier', v_user_logis)
+        ON CONFLICT (numero) DO NOTHING RETURNING id INTO v_br_id;
+
+        IF v_br_id IS NOT NULL THEN
+            -- Lignes réception
+            INSERT INTO public.lignes_reception (bon_reception_id, produit_id, quantite_recue, prix_unitaire_ht, tva, date_peremption) VALUES
+            (v_br_id, v_produit_choc_tart, 20.000, 2500.00, 19.25, '2027-01-31'),
+            (v_br_id, v_produit_choc_tab, 30.000, 250.00, 19.25, '2027-02-28'),
+            (v_br_id, v_produit_choc_poudre, 20.000, 600.00, 19.25, '2027-01-31');
+
+            -- Facture fournisseur
+            INSERT INTO public.factures_fournisseur (numero, bon_reception_id, fournisseur_id, date_facture, date_echeance, statut, montant_ht, montant_tva, montant_ttc, montant_regle, notes, utilisateur_id) 
+            VALUES ('FAC-FOUR-9989', v_br_id, v_fournisseur_chococam, '2026-02-09', '2026-03-11', 'REGLÉE', 125000.00, 24062.50, 149062.50, 149062.50, 'Facture réglée par virement', v_user_compta)
+            ON CONFLICT (numero) DO NOTHING RETURNING id INTO v_ff_id;
+
+            IF v_ff_id IS NOT NULL THEN
+                -- Règlement fournisseur
+                INSERT INTO public.reglements_fournisseur (facture_id, date_reglement, montant, mode_paiement, reference, banque_id, utilisateur_id) 
+                VALUES (v_ff_id, '2026-02-15', 149062.50, 'VIREMENT', 'VIR-2026-002', v_banque_bicec, v_user_compta);
+            END IF;
+        END IF;
+    END IF;
+END $$;
+
+-- ============================================================================
+-- 14. APPROVISIONNEMENTS - COMMANDE BRASSERIES (FOUR-004)
+-- ============================================================================
+
+DO $$
+DECLARE
+    v_fournisseur_brasseries INT;
+    v_user_logis INT;
+    v_produit_biere INT;
+    v_produit_eau INT;
+    v_bc_id INT;
+    v_br_id INT;
+BEGIN
+    SELECT id INTO v_fournisseur_brasseries FROM public.fournisseurs WHERE code = 'FOUR-004';
+    SELECT id INTO v_user_logis FROM public.utilisateurs WHERE login = 'logis';
+    SELECT id INTO v_produit_biere FROM public.produits WHERE code = 'BIERE-33CL';
+    SELECT id INTO v_produit_eau FROM public.produits WHERE code = 'EAU-MINALE';
+
+    -- Bons de commande fournisseur
+    INSERT INTO public.bons_commande_fournisseur (numero, fournisseur_id, date_commande, date_livraison_prevue, statut, montant_ht, montant_tva, montant_ttc, notes, utilisateur_id) 
+    VALUES ('BCF-2026-003', v_fournisseur_brasseries, '2026-02-15', '2026-02-25', 'LIVRÉ', 80000.00, 15400.00, 95400.00, 'Stock boissons pour événements', v_user_logis)
+    ON CONFLICT (numero) DO NOTHING RETURNING id INTO v_bc_id;
+
+    IF v_bc_id IS NOT NULL THEN
+        -- Lignes commande
+        INSERT INTO public.lignes_commande_fournisseur (bon_commande_id, produit_id, quantite_commandee, quantite_recue, prix_unitaire_ht, tva) VALUES
+        (v_bc_id, v_produit_biere, 100.000, 100.000, 300.00, 19.25),
+        (v_bc_id, v_produit_eau, 80.000, 80.000, 200.00, 19.25);
+
+        -- Réception
+        INSERT INTO public.bons_reception (numero, bon_commande_id, fournisseur_id, date_reception, statut, notes, utilisateur_id) 
+        VALUES ('BR-2026-003', v_bc_id, v_fournisseur_brasseries, '2026-02-24', 'REÇU', 'Livré avec bon de livraison BDL-2026-01', v_user_logis)
+        ON CONFLICT (numero) DO NOTHING RETURNING id INTO v_br_id;
+
+        IF v_br_id IS NOT NULL THEN
+            -- Lignes réception
+            INSERT INTO public.lignes_reception (bon_reception_id, produit_id, quantite_recue, prix_unitaire_ht, tva, date_peremption) VALUES
+            (v_br_id, v_produit_biere, 100.000, 300.00, 19.25, '2026-10-31'),
+            (v_br_id, v_produit_eau, 80.000, 200.00, 19.25, '2027-03-31');
+        END IF;
+    END IF;
+END $$;
+
+-- ============================================================================
+-- 15. VENTES CLIENTS - COMMANDE SND (CLI-002)
+-- ============================================================================
+
+DO $$
+DECLARE
+    v_client_snd INT;
+    v_user_vendeur INT;
+    v_user_compta INT;
+    v_banque_afriland INT;
+    v_produit_choc_tart INT;
+    v_produit_choc_tab INT;
+    v_produit_jus INT;
+    v_produit_thon INT;
+    v_bcc_id INT;
+    v_bl_id INT;
+    v_fc_id INT;
+BEGIN
+    SELECT id INTO v_client_snd FROM public.clients WHERE code = 'CLI-002';
+    SELECT id INTO v_user_vendeur FROM public.utilisateurs WHERE login = 'vendeur';
+    SELECT id INTO v_user_compta FROM public.utilisateurs WHERE login = 'compta';
+    SELECT id INTO v_banque_afriland FROM public.banques WHERE code = 'AFRILAND';
+    SELECT id INTO v_produit_choc_tart FROM public.produits WHERE code = 'CHOC-TART-1KG';
+    SELECT id INTO v_produit_choc_tab FROM public.produits WHERE code = 'CHOC-TAB-100G';
+    SELECT id INTO v_produit_jus FROM public.produits WHERE code = 'JUS-ORANGE';
+    SELECT id INTO v_produit_thon FROM public.produits WHERE code = 'THON';
+
+    -- Bons de commande client
+    INSERT INTO public.bons_commande_client (numero, client_id, date_commande, date_livraison_prevue, statut, montant_ht, montant_tva, montant_ttc, remise_pct, notes, utilisateur_id) 
+    VALUES ('BCC-2026-002', v_client_snd, '2026-02-01', '2026-02-05', 'LIVRÉ', 127500.00, 24543.75, 152043.75, 10.00, 'Commande grossiste - remise 10%', v_user_vendeur)
+    ON CONFLICT (numero) DO NOTHING RETURNING id INTO v_bcc_id;
+
+    IF v_bcc_id IS NOT NULL THEN
+        -- Lignes commande
+        INSERT INTO public.lignes_commande_client (bon_commande_id, produit_id, quantite_commandee, quantite_livree, prix_unitaire_ht, tva, remise_pct) VALUES
+        (v_bcc_id, v_produit_choc_tart, 10.000, 10.000, 3200.00, 19.25, 10.00),
+        (v_bcc_id, v_produit_choc_tab, 20.000, 20.000, 400.00, 19.25, 10.00),
+        (v_bcc_id, v_produit_jus, 15.000, 15.000, 750.00, 19.25, 10.00),
+        (v_bcc_id, v_produit_thon, 5.000, 5.000, 1200.00, 19.25, 10.00);
+
+        -- Livraison
+        INSERT INTO public.bons_livraison_client (numero, bon_commande_id, client_id, date_livraison, statut, notes, utilisateur_id) 
+        VALUES ('BL-2026-002', v_bcc_id, v_client_snd, '2026-02-04', 'LIVRÉ', 'Livré complet, MME Etoa satisfaite', v_user_vendeur)
+        ON CONFLICT (numero) DO NOTHING RETURNING id INTO v_bl_id;
+
+        IF v_bl_id IS NOT NULL THEN
+            -- Lignes livraison
+            INSERT INTO public.lignes_livraison_client (bon_livraison_id, produit_id, quantite_livree, prix_unitaire_ht, tva, remise_pct) VALUES
+            (v_bl_id, v_produit_choc_tart, 10.000, 3200.00, 19.25, 10.00),
+            (v_bl_id, v_produit_choc_tab, 20.000, 400.00, 19.25, 10.00),
+            (v_bl_id, v_produit_jus, 15.000, 750.00, 19.25, 10.00),
+            (v_bl_id, v_produit_thon, 5.000, 1200.00, 19.25, 10.00);
+
+            -- Facture client
+            INSERT INTO public.factures_client (numero, bon_livraison_id, client_id, date_facture, date_echeance, type_vente, montant_ht, montant_tva, montant_ttc, remise_montant, montant_regle, statut, utilisateur_id) 
+            VALUES ('FAC-CLI-2026-002', v_bl_id, v_client_snd, '2026-02-04', '2026-03-06', 'CREDIT', 127500.00, 24543.75, 152043.75, 12750.00, 152043.75, 'REGLÉE', v_user_vendeur)
+            ON CONFLICT (numero) DO NOTHING RETURNING id INTO v_fc_id;
+
+            IF v_fc_id IS NOT NULL THEN
+                -- Règlement client
+                INSERT INTO public.reglements_client (facture_id, date_reglement, montant, mode_paiement, reference, banque_id, utilisateur_id) 
+                VALUES (v_fc_id, '2026-02-10', 152043.75, 'CHEQUE', 'CH-66789', v_banque_afriland, v_user_compta);
+            END IF;
+        END IF;
+    END IF;
+END $$;
+
+-- ============================================================================
+-- 16. VENTES CLIENTS - COMMANDE SUPERMARCHE MFOUNDI (CLI-004)
+-- ============================================================================
+
+DO $$
+DECLARE
+    v_client_supermarche INT;
+    v_user_vendeur INT;
+    v_produit_jus INT;
+    v_produit_eau INT;
+    v_produit_biere INT;
+    v_produit_thon INT;
+    v_produit_savon INT;
+    v_bcc_id INT;
+    v_bl_id INT;
+    v_fc_id INT;
+BEGIN
+    SELECT id INTO v_client_supermarche FROM public.clients WHERE code = 'CLI-004';
+    SELECT id INTO v_user_vendeur FROM public.utilisateurs WHERE login = 'vendeur';
+    SELECT id INTO v_produit_jus FROM public.produits WHERE code = 'JUS-ORANGE';
+    SELECT id INTO v_produit_eau FROM public.produits WHERE code = 'EAU-MINALE';
+    SELECT id INTO v_produit_biere FROM public.produits WHERE code = 'BIERE-33CL';
+    SELECT id INTO v_produit_thon FROM public.produits WHERE code = 'THON';
+    SELECT id INTO v_produit_savon FROM public.produits WHERE code = 'SAVON';
+
+    -- Bons de commande client
+    INSERT INTO public.bons_commande_client (numero, client_id, date_commande, date_livraison_prevue, statut, montant_ht, montant_tva, montant_ttc, remise_pct, notes, utilisateur_id) 
+    VALUES ('BCC-2026-003', v_client_supermarche, '2026-02-10', '2026-02-12', 'LIVRÉ', 92000.00, 17710.00, 109710.00, 0.00, 'Livraison à l''entrepôt du supermarché', v_user_vendeur)
+    ON CONFLICT (numero) DO NOTHING RETURNING id INTO v_bcc_id;
+
+    IF v_bcc_id IS NOT NULL THEN
+        -- Lignes commande
+        INSERT INTO public.lignes_commande_client (bon_commande_id, produit_id, quantite_commandee, quantite_livree, prix_unitaire_ht, tva, remise_pct) VALUES
+        (v_bcc_id, v_produit_jus, 20.000, 20.000, 750.00, 19.25, 0.00),
+        (v_bcc_id, v_produit_eau, 50.000, 50.000, 350.00, 19.25, 0.00),
+        (v_bcc_id, v_produit_biere, 40.000, 40.000, 500.00, 19.25, 0.00),
+        (v_bcc_id, v_produit_thon, 20.000, 20.000, 1200.00, 19.25, 0.00),
+        (v_bcc_id, v_produit_savon, 30.000, 30.000, 600.00, 19.25, 0.00);
+
+        -- Livraison
+        INSERT INTO public.bons_livraison_client (numero, bon_commande_id, client_id, date_livraison, statut, notes, utilisateur_id) 
+        VALUES ('BL-2026-003', v_bcc_id, v_client_supermarche, '2026-02-11', 'LIVRÉ', 'Livré complet, réceptionné par M. Ndi', v_user_vendeur)
+        ON CONFLICT (numero) DO NOTHING RETURNING id INTO v_bl_id;
+
+        IF v_bl_id IS NOT NULL THEN
+            -- Lignes livraison
+            INSERT INTO public.lignes_livraison_client (bon_livraison_id, produit_id, quantite_livree, prix_unitaire_ht, tva, remise_pct) VALUES
+            (v_bl_id, v_produit_jus, 20.000, 750.00, 19.25, 0.00),
+            (v_bl_id, v_produit_eau, 50.000, 350.00, 19.25, 0.00),
+            (v_bl_id, v_produit_biere, 40.000, 500.00, 19.25, 0.00),
+            (v_bl_id, v_produit_thon, 20.000, 1200.00, 19.25, 0.00),
+            (v_bl_id, v_produit_savon, 30.000, 600.00, 19.25, 0.00);
+
+            -- Facture client (partiellement réglée)
+            INSERT INTO public.factures_client (numero, bon_livraison_id, client_id, date_facture, date_echeance, type_vente, montant_ht, montant_tva, montant_ttc, remise_montant, montant_regle, statut, utilisateur_id) 
+            VALUES ('FAC-CLI-2026-003', v_bl_id, v_client_supermarche, '2026-02-11', '2026-03-13', 'CREDIT', 92000.00, 17710.00, 109710.00, 0.00, 50000.00, 'REGLÉE_PARTIEL', v_user_vendeur)
+            ON CONFLICT (numero) DO NOTHING RETURNING id INTO v_fc_id;
+
+            IF v_fc_id IS NOT NULL THEN
+                -- Règlement client partiel
+                INSERT INTO public.reglements_client (facture_id, date_reglement, montant, mode_paiement, reference, banque_id, utilisateur_id) 
+                VALUES (v_fc_id, '2026-02-15', 50000.00, 'ESPECES', 'RECIPISE-015', NULL, v_user_vendeur);
+            END IF;
+        END IF;
+    END IF;
+END $$;
+
+-- ============================================================================
+-- 17. VENTES AU COMPTOIR
+-- ============================================================================
+
+DO $$
+DECLARE
+    v_client_standard INT;
+    v_client_partenaire INT;
+    v_user_vendeur INT;
+    v_produit_choc_tab INT;
+    v_produit_choc_tart INT;
+    v_produit_jus INT;
+    v_produit_sardine INT;
+    v_produit_thon INT;
+    v_produit_detergeant INT;
+    v_produit_beurre INT;
+    v_produit_lait_boite INT;
+    v_produit_yaourt INT;
+    v_produit_mais INT;
+    v_vc_id INT;
+BEGIN
+    SELECT id INTO v_client_standard FROM public.clients WHERE code = 'CLI-003';
+    SELECT id INTO v_client_partenaire FROM public.clients WHERE code = 'CLI-006';
+    SELECT id INTO v_user_vendeur FROM public.utilisateurs WHERE login = 'vendeur';
+    SELECT id INTO v_produit_choc_tab FROM public.produits WHERE code = 'CHOC-TAB-100G';
+    SELECT id INTO v_produit_choc_tart FROM public.produits WHERE code = 'CHOC-TART-1KG';
+    SELECT id INTO v_produit_jus FROM public.produits WHERE code = 'JUS-ORANGE';
+    SELECT id INTO v_produit_sardine FROM public.produits WHERE code = 'SARDINE';
+    SELECT id INTO v_produit_thon FROM public.produits WHERE code = 'THON';
+    SELECT id INTO v_produit_detergeant FROM public.produits WHERE code = 'DETERGENT';
+    SELECT id INTO v_produit_beurre FROM public.produits WHERE code = 'BEURRE';
+    SELECT id INTO v_produit_lait_boite FROM public.produits WHERE code = 'LAIT-BOITE';
+    SELECT id INTO v_produit_yaourt FROM public.produits WHERE code = 'YAOURT';
+    SELECT id INTO v_produit_mais FROM public.produits WHERE code = 'MAIS-DOUX';
+
+    -- Vente comptant 1
+    INSERT INTO public.ventes_comptant (numero, client_id, date_vente, montant_ht, montant_tva, montant_ttc, remise_montant, montant_percu, mode_paiement, notes, utilisateur_id) 
+    VALUES ('VTC-2026-0002', v_client_standard, '2026-02-03', 7200.00, 1386.00, 8586.00, 0.00, 9000.00, 'MOBILE_MONEY', 'Paiement Orange Money - client régulier', v_user_vendeur)
+    ON CONFLICT (numero) DO NOTHING RETURNING id INTO v_vc_id;
+
+    IF v_vc_id IS NOT NULL THEN
+        INSERT INTO public.lignes_vente_comptant (vente_comptant_id, produit_id, quantite, prix_unitaire_ht, tva, remise_pct) VALUES
+        (v_vc_id, v_produit_choc_tab, 3.000, 400.00, 19.25, 0.00),
+        (v_vc_id, v_produit_jus, 2.000, 750.00, 19.25, 0.00),
+        (v_vc_id, v_produit_sardine, 4.000, 550.00, 19.25, 0.00);
+    END IF;
+
+    -- Vente comptant 2
+    INSERT INTO public.ventes_comptant (numero, client_id, date_vente, montant_ht, montant_tva, montant_ttc, remise_montant, montant_percu, mode_paiement, notes, utilisateur_id) 
+    VALUES ('VTC-2026-0003', v_client_partenaire, '2026-02-08', 12500.00, 2406.25, 14906.25, 500.00, 15000.00, 'CARTE', 'Paiement par carte bancaire - remise fidélité', v_user_vendeur)
+    ON CONFLICT (numero) DO NOTHING RETURNING id INTO v_vc_id;
+
+    IF v_vc_id IS NOT NULL THEN
+        INSERT INTO public.lignes_vente_comptant (vente_comptant_id, produit_id, quantite, prix_unitaire_ht, tva, remise_pct) VALUES
+        (v_vc_id, v_produit_choc_tart, 2.000, 3200.00, 19.25, 5.00),
+        (v_vc_id, v_produit_thon, 3.000, 1200.00, 19.25, 5.00),
+        (v_vc_id, v_produit_detergeant, 2.000, 1800.00, 19.25, 5.00),
+        (v_vc_id, v_produit_beurre, 4.000, 1200.00, 19.25, 5.00);
+    END IF;
+
+    -- Vente comptant 3
+    INSERT INTO public.ventes_comptant (numero, client_id, date_vente, montant_ht, montant_tva, montant_ttc, remise_montant, montant_percu, mode_paiement, notes, utilisateur_id) 
+    VALUES ('VTC-2026-0004', v_client_standard, '2026-02-12', 5600.00, 1078.00, 6678.00, 0.00, 7000.00, 'ESPECES', 'Client pressé - achat rapide', v_user_vendeur)
+    ON CONFLICT (numero) DO NOTHING RETURNING id INTO v_vc_id;
+
+    IF v_vc_id IS NOT NULL THEN
+        INSERT INTO public.lignes_vente_comptant (vente_comptant_id, produit_id, quantite, prix_unitaire_ht, tva, remise_pct) VALUES
+        (v_vc_id, v_produit_lait_boite, 5.000, 550.00, 19.25, 0.00),
+        (v_vc_id, v_produit_yaourt, 4.000, 450.00, 19.25, 0.00),
+        (v_vc_id, v_produit_sardine, 2.000, 550.00, 19.25, 0.00),
+        (v_vc_id, v_produit_mais, 3.000, 400.00, 19.25, 0.00);
+    END IF;
+END $$;
+
+-- ============================================================================
+-- 18. MOUVEMENTS DE STOCK
+-- ============================================================================
+
+DO $$
+DECLARE
+    v_user_logis INT;
+    v_user_vendeur INT;
+BEGIN
+    SELECT id INTO v_user_logis FROM public.utilisateurs WHERE login = 'logis';
+    SELECT id INTO v_user_vendeur FROM public.utilisateurs WHERE login = 'vendeur';
+
+    -- Entrées suite réceptions
+    INSERT INTO public.mouvements_stock (produit_id, type_mouvement, source, source_id, quantite, stock_avant, stock_apres, utilisateur_id, date_mouvement)
+    SELECT 
+        p.id,
+        'ENTREE',
+        'BON_RECEPTION',
+        br.id,
+        lr.quantite_recue,
+        COALESCE(p.stock_actuel, 0),
+        COALESCE(p.stock_actuel, 0) + lr.quantite_recue,
+        v_user_logis,
+        br.date_reception
+    FROM public.bons_reception br
+    JOIN public.lignes_reception lr ON br.id = lr.bon_reception_id
+    JOIN public.produits p ON lr.produit_id = p.id
+    WHERE br.numero IN ('BR-2026-002', 'BR-2026-003');
+
+    -- Sorties suite livraisons clients
+    INSERT INTO public.mouvements_stock (produit_id, type_mouvement, source, source_id, quantite, stock_avant, stock_apres, utilisateur_id, date_mouvement)
+    SELECT 
+        p.id,
+        'SORTIE',
+        'BON_LIVR_CLIENT',
+        bl.id,
+        -ll.quantite_livree,
+        COALESCE(p.stock_actuel, 0),
+        COALESCE(p.stock_actuel, 0) - ll.quantite_livree,
+        v_user_vendeur,
+        bl.date_livraison
+    FROM public.bons_livraison_client bl
+    JOIN public.lignes_livraison_client ll ON bl.id = ll.bon_livraison_id
+    JOIN public.produits p ON ll.produit_id = p.id
+    WHERE bl.numero IN ('BL-2026-002', 'BL-2026-003');
+
+    -- Sorties suite ventes comptant
+    INSERT INTO public.mouvements_stock (produit_id, type_mouvement, source, source_id, quantite, stock_avant, stock_apres, utilisateur_id, date_mouvement)
+    SELECT 
+        p.id,
+        'SORTIE',
+        'VENTE_COMPTANT',
+        vc.id,
+        -lv.quantite,
+        COALESCE(p.stock_actuel, 0),
+        COALESCE(p.stock_actuel, 0) - lv.quantite,
+        v_user_vendeur,
+        vc.date_vente
+    FROM public.ventes_comptant vc
+    JOIN public.lignes_vente_comptant lv ON vc.id = lv.vente_comptant_id
+    JOIN public.produits p ON lv.produit_id = p.id
+    WHERE vc.numero IN ('VTC-2026-0002', 'VTC-2026-0003', 'VTC-2026-0004');
+END $$;
+
+-- ============================================================================
+-- 19. MISE À JOUR DES STOCKS ACTUELS
+-- ============================================================================
+
+UPDATE public.produits p
+SET stock_actuel = COALESCE((
+    SELECT SUM(
+        CASE WHEN m.type_mouvement = 'ENTREE' THEN m.quantite
+             WHEN m.type_mouvement = 'SORTIE' THEN m.quantite
+             ELSE 0
+        END
+    )
+    FROM public.mouvements_stock m
+    WHERE m.produit_id = p.id
+), 0);
+
+-- ============================================================================
+-- 20. VÉRIFICATION FINALE
 -- ============================================================================
 
 SELECT '🏷️ Groupes: ' || COUNT(*)::text FROM public.groupes_utilisateurs
@@ -237,37 +659,50 @@ SELECT '🏦 Banques: ' || COUNT(*)::text FROM public.banques
 UNION ALL
 SELECT '👤 Clients: ' || COUNT(*)::text FROM public.clients
 UNION ALL
-SELECT '🚚 Fournisseurs: ' || COUNT(*)::text FROM public.fournisseurs;
+SELECT '🚚 Fournisseurs: ' || COUNT(*)::text FROM public.fournisseurs
+UNION ALL
+SELECT '📋 Bons commande fournisseur: ' || COUNT(*)::text FROM public.bons_commande_fournisseur
+UNION ALL
+SELECT '📦 Lignes commande fournisseur: ' || COUNT(*)::text FROM public.lignes_commande_fournisseur
+UNION ALL
+SELECT '📥 Bons réception: ' || COUNT(*)::text FROM public.bons_reception
+UNION ALL
+SELECT '📄 Factures fournisseur: ' || COUNT(*)::text FROM public.factures_fournisseur
+UNION ALL
+SELECT '📋 Bons commande client: ' || COUNT(*)::text FROM public.bons_commande_client
+UNION ALL
+SELECT '📦 Lignes commande client: ' || COUNT(*)::text FROM public.lignes_commande_client
+UNION ALL
+SELECT '🚚 Bons livraison client: ' || COUNT(*)::text FROM public.bons_livraison_client
+UNION ALL
+SELECT '📄 Factures client: ' || COUNT(*)::text FROM public.factures_client
+UNION ALL
+SELECT '💰 Ventes comptant: ' || COUNT(*)::text FROM public.ventes_comptant
+UNION ALL
+SELECT '📊 Mouvements stock: ' || COUNT(*)::text FROM public.mouvements_stock;
 
 -- ============================================================================
--- 13. MATRICE DES DROITS PAR GROUPE
+-- 21. RÉSUMÉ DES OPÉRATIONS
 -- ============================================================================
+
+SELECT '=== RÉSUMÉ DES MONTANTS ===' AS info;
 
 SELECT 
-    d.module,
-    d.code,
-    d.description,
-    CASE WHEN EXISTS (
-        SELECT 1 FROM public.groupes_droits gd 
-        JOIN public.groupes_utilisateurs gu ON gd.groupe_id = gu.id
-        WHERE gd.droit_id = d.id AND gu.nom = 'ADMINISTRATEURS'
-    ) THEN '✅' ELSE '❌' END AS admin,
-    CASE WHEN EXISTS (
-        SELECT 1 FROM public.groupes_droits gd 
-        JOIN public.groupes_utilisateurs gu ON gd.groupe_id = gu.id
-        WHERE gd.droit_id = d.id AND gu.nom = 'VENDEURS'
-    ) THEN '✅' ELSE '❌' END AS vendeurs,
-    CASE WHEN EXISTS (
-        SELECT 1 FROM public.groupes_droits gd 
-        JOIN public.groupes_utilisateurs gu ON gd.groupe_id = gu.id
-        WHERE gd.droit_id = d.id AND gu.nom = 'LOGISTICIENS'
-    ) THEN '✅' ELSE '❌' END AS logisticiens,
-    CASE WHEN EXISTS (
-        SELECT 1 FROM public.groupes_droits gd 
-        JOIN public.groupes_utilisateurs gu ON gd.groupe_id = gu.id
-        WHERE gd.droit_id = d.id AND gu.nom = 'COMPTABILITE'
-    ) THEN '✅' ELSE '❌' END AS comptabilite
-FROM public.droits d
-ORDER BY d.module, d.code;
+    'APPROVISIONNEMENTS' AS module,
+    COUNT(*) AS total,
+    SUM(montant_ttc) AS montant_total_ttc
+FROM public.bons_commande_fournisseur
+UNION ALL
+SELECT 
+    'VENTES CLIENTS',
+    COUNT(*),
+    SUM(montant_ttc)
+FROM public.bons_commande_client
+UNION ALL
+SELECT 
+    'VENTES COMPTOIR',
+    COUNT(*),
+    SUM(montant_ttc)
+FROM public.ventes_comptant;
 
 COMMIT;

@@ -172,16 +172,45 @@ class ProduitController extends Controller
         ]);
     }
 
+    /**
+     * Met à jour un produit avec gestion des transitions père/fils
+     */
     public function mettreAJour(int $id): void {
         Auth::verifierDroit('STRUCTURE_MODIFIER');
         $this->verifierMethode('POST');
-        $donnees = $this->nettoyerPost([
-            'code', 'designation', 'famille_id', 'unite',
-            'prix_achat_ht', 'prix_vente_ht', 'tva',
-            'stock_actuel', 'stock_minimum', 'date_peremption', 'actif',
-        ]);
-        $this->produitModel->mettreAJour($id, $donnees);
-        $_SESSION['succes'] = "Produit modifié.";
+        
+        try {
+            // Récupérer les données du formulaire
+            $donnees = $this->nettoyerPost([
+                'code', 'designation', 'famille_id', 'unite', 'est_pere',
+                'prix_achat_ht', 'prix_vente_ht', 'tva',
+                'stock_actuel', 'stock_minimum', 'date_peremption', 'actif',
+            ]);
+            
+            // Ajouter les données de parenté (non nettoyées par nettoyerPost car ce sont des champs spécifiques)
+            $donnees['parent_id'] = isset($_POST['parent_id']) && !empty($_POST['parent_id']) 
+                                   ? (int)$_POST['parent_id'] 
+                                   : null;
+            $donnees['quantite_fils'] = isset($_POST['quantite_fils']) && !empty($_POST['quantite_fils']) 
+                                       ? (float)$_POST['quantite_fils'] 
+                                       : 1;
+            
+            // Vérifier que le code n'est pas déjà utilisé par un autre produit
+            if ($this->produitModel->existeParCode($donnees['code'], $id)) {
+                $_SESSION['erreur'] = "Ce code produit est déjà utilisé par un autre produit.";
+                $this->redirigerVers('/structure/produits/' . $id . '/modifier');
+                return;
+            }
+            
+            // Mettre à jour avec gestion des transitions
+            $this->produitModel->mettreAJour($id, $donnees);
+            
+            $_SESSION['succes'] = "Produit modifié avec succès.";
+            
+        } catch (\Exception $e) {
+            $_SESSION['erreur'] = "Erreur lors de la modification : " . $e->getMessage();
+        }
+        
         $this->redirigerVers('/structure/produits');
     }
 

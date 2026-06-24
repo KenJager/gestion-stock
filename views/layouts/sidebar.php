@@ -21,10 +21,14 @@ $navItems = [
         'chemin'  => '#',
         'droit'   => 'APPRO_LIRE',
         'sousmenu' => [
-            ['libelle' => 'Commandes fournisseurs', 'chemin' => '/approvisionnements/commandes'],
-            ['libelle' => 'Bons de réception',      'chemin' => '/approvisionnements/receptions'],
-            ['libelle' => 'Factures fournisseurs',  'chemin' => '/approvisionnements/factures'],
-            ['libelle' => 'Entrées (dons)',         'chemin' => '/approvisionnements/dons'],
+            ['libelle' => 'Commandes fournisseurs', 'chemin' => '/appros/commandes'],
+            ['libelle' => 'Bons de réception',      'chemin' => '/appros/receptions'],
+            ['libelle' => 'Factures fournisseurs',  'chemin' => '/appros/factures'],
+            ['libelle' => 'Entrées (dons)',         'chemin' => '/appros/dons'],
+            ['libelle' => 'Corbeille', 'chemin' => '/appros/archives'],
+            ['separateur' => 'États'],
+            ['libelle' => 'État journalier',        'chemin' => '/appros/etats/journalier'],
+            ['libelle' => 'État annuel',            'chemin' => '/appros/etats/annuel'],
         ],
     ],
     [
@@ -39,6 +43,7 @@ $navItems = [
             ['libelle' => 'Factures clients',      'chemin' => '/ventes/factures'],
             ['libelle' => 'Ventes comptant',       'chemin' => '/ventes/comptant'],
             ['libelle' => 'Sorties produits',      'chemin' => '/ventes/sorties'],
+            ['libelle' => 'Corbeille',        'chemin' => '/ventes/corbeille'],
         ],
     ],
     [
@@ -149,12 +154,18 @@ if (!empty($moduleActif) && !in_array($moduleActif, $openModules)) {
                              style="<?= $estOuvert ? '' : 'display: none;' ?>">
                             <div class="submenu">
                                 <?php foreach ($item['sousmenu'] as $sous): ?>
+                                    <?php if (isset($sous['separateur'])): ?>
+                                        <p class="submenu-separateur"><?= htmlspecialchars($sous['separateur'] ?? '') ?></p>
+                                        <?php continue; ?>
+                                    <?php endif; ?>
+
                                     <?php if (!isset($sous['droit']) || $sous['droit'] === null || \Auth::peut($sous['droit'])): ?>
-                                    <a href="<?= BASE_URL . $sous['chemin'] ?>"
-                                       class="submenu-link"
-                                       data-nav-close>
-                                        <?= htmlspecialchars($sous['libelle']) ?>
-                                    </a>
+                                        <?php $sousChemin = $sous['chemin'] ?? '#'; $sousLib = $sous['libelle'] ?? ''; ?>
+                                        <a href="<?= BASE_URL . $sousChemin ?>"
+                                           class="submenu-link"
+                                           data-nav-close>
+                                            <?= htmlspecialchars($sousLib) ?>
+                                        </a>
                                     <?php endif; ?>
                                 <?php endforeach; ?>
                             </div>

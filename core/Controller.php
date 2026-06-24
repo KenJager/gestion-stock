@@ -71,7 +71,6 @@ abstract class Controller {
     /**
      * Nettoie et récupère les champs POST demandés.
      * Les champs absents valent null.
-     */
     protected function nettoyerPost(array $champs): array {
         $donnees = [];
         foreach ($champs as $champ) {
@@ -80,6 +79,29 @@ abstract class Controller {
                 : null;
         }
         return $donnees;
+    }
+    */
+
+    protected function nettoyerPost(array $cles): array {
+        $resultat = [];
+        foreach ($cles as $cle) {
+            $valeur = $_POST[$cle] ?? null;
+            
+            // Si la valeur est un tableau (ex: lignes de commande), on nettoie récursivement
+            if (is_array($valeur)) {
+                $resultat[$cle] = array_map(function($item) {
+                    if (is_array($item)) {
+                        return array_map(function($v) {
+                            return is_string($v) ? htmlspecialchars(trim($v), ENT_QUOTES, 'UTF-8') : $v;
+                        }, $item);
+                    }
+                    return is_string($item) ? htmlspecialchars(trim($item), ENT_QUOTES, 'UTF-8') : $item;
+                }, $valeur);
+            } else {
+                $resultat[$cle] = is_string($valeur) ? htmlspecialchars(trim($valeur), ENT_QUOTES, 'UTF-8') : $valeur;
+            }
+        }
+        return $resultat;
     }
 
     protected function erreur404(string $message = 'Page introuvable'): never {

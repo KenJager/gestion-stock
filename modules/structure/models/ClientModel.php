@@ -7,6 +7,17 @@ class ClientModel extends Model
 {
     protected string $table = 'clients';
 
+    /**
+     * Liste tous les clients actifs
+     */
+    public function listerActifs(): array {
+        $sql = "SELECT id, code, raison_sociale, contact, telephone, email 
+                FROM {$this->table} 
+                WHERE actif = true 
+                ORDER BY raison_sociale";
+        return $this->pdo()->query($sql)->fetchAll();
+    }
+
     public function listerAvecCategorie(): array {
         $sql = "SELECT c.*, cc.libelle AS categorie_libelle
                 FROM {$this->table} c
