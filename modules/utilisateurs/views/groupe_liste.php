@@ -62,11 +62,16 @@
                                 </a>
                             <?php endif; ?>
                             <?php if (\Auth::peut('USERS_SUPPRIMER')): ?>
+                                <?php
+                                $nbU = (int) $g['nb_utilisateurs'];
+                                $confirmMsg = $nbU > 0
+                                    ? "Supprimer ce groupe et ses {$nbU} utilisateur(s) associé(s) ? Ils seront archivés en cascade dans la corbeille."
+                                    : 'Supprimer ce groupe ?';
+                                ?>
                                 <form action="<?= BASE_URL ?>/groupes/<?= $g['id'] ?>/supprimer"
                                       method="POST" style="display:inline;"
-                                      onsubmit="return confirm('Supprimer ce groupe ?');">
-                                    <button type="submit" class="btn btn-danger" title="Supprimer"
-                                        <?= (int)$g['nb_utilisateurs'] > 0 ? 'disabled' : '' ?>>
+                                      onsubmit="return confirm('<?= addslashes($confirmMsg) ?>');">
+                                    <button type="submit" class="btn btn-danger" title="Supprimer">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
                                 </form>

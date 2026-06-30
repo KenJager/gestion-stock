@@ -12,7 +12,7 @@ use \Database;
 class EtatController extends Controller {
     
     public function __construct() {
-        // parent::__construct(); // Désactivé pour les tests
+        parent::__construct();
     }
     
     /**
@@ -62,9 +62,12 @@ class EtatController extends Controller {
   public function journalierPdf(): void {
     $date = $_GET['date'] ?? date('Y-m-d');
     $commandes = $this->getCommandesParJour($date);
-    
-    require_once ROOT . '/vendor/fpdf/fpdf.php';
-    
+
+    require_once ROOT . '/vendor/autoload.php';
+    if (!class_exists('FPDF') && class_exists('Fpdf\\Fpdf')) {
+        class_alias('Fpdf\\Fpdf', 'FPDF');
+    }
+
     $pdf = new \FPDF();
     $pdf->AddPage();
     $pdf->SetFont('Arial', 'B', 16);
@@ -119,9 +122,12 @@ class EtatController extends Controller {
     public function annuelPdf(): void {
         $annee = $_GET['annee'] ?? date('Y');
         $mois = $this->getMoisAchats($annee);
-        
-        require_once ROOT . '/vendor/fpdf/fpdf.php';
-        
+
+        require_once ROOT . '/vendor/autoload.php';
+        if (!class_exists('FPDF') && class_exists('Fpdf\\Fpdf')) {
+            class_alias('Fpdf\\Fpdf', 'FPDF');
+        }
+
         $pdf = new \FPDF();
         $pdf->AddPage();
         $pdf->SetFont('Arial', 'B', 16);

@@ -304,10 +304,52 @@ public function supprimer(int $id): void {
         $stmtUpdate->execute([':commande_id' => $reception['bon_commande_id']]);
         
         $db->commit();
-        
+
     } catch (\Exception $e) {
         $db->rollBack();
         throw $e;
     }
+}
+
+public function restaurer(array $principal, array $lignes): void {
+    $db = \Database::connexion();
+
+    $db->prepare(
+        "INSERT INTO bons_reception
+            (id, numero, bon_commande_id, fournisseur_id, date_reception, statut, notes)
+         VALUES
+            (:id, :numero, :bon_commande_id, :fournisseur_id, :date_reception, :statut, :notes)"
+    )->execute([
+        ':id'             => (int)   $principal['id'],
+        ':numero'         =>          $principal['numero'],
+        ':bon_commande_id'=> $principal['bon_commande_id'] ? (int) $principal['bon_commande_id'] : null,
+        ':fournisseur_id' => (int)   $principal['fournisseur_id'],
+        ':date_reception' =>          $principal['date_reception'],
+        ':statut'         =>          $principal['statut'] ?? 'REÇU',
+        ':notes'          =>          $principal['notes'] ?: null,
+    ]);
+
+    $stmtLigne = $db->prepare(
+        "INSERT INTO lignes_reception
+            (id, bon_reception_id, produit_id, quantite_recue, prix_unitaire_ht, tva, date_peremption)
+         VALUES
+            (:id, :bon_reception_id, :produit_id, :quantite_recue, :prix_unitaire_ht, :tva, :date_peremption)"
+    );
+    $stmtStock = $db->prepare("UPDATE produits SET stock_actuel = stock_actuel + :qte WHERE id = :produit_id");
+
+    foreach ($lignes as $l) {
+        $stmtLigne->execute([
+            ':id'              => (int)   $l['id'],
+            ':bon_reception_id'=> (int)   $principal['id'],
+            ':produit_id'      => (int)   $l['produit_id'],
+            ':quantite_recue'  => (float) $l['quantite_recue'],
+            ':prix_unitaire_ht'=> (float) $l['prix_unitaire_ht'],
+            ':tva'             => (float) ($l['tva'] ?? 19.25),
+            ':date_peremption' =>          $l['date_peremption'] ?: null,
+        ]);
+        $stmtStock->execute([':qte' => (float) $l['quantite_recue'], ':produit_id' => (int) $l['produit_id']]);
+    }
+
+    $db->exec("SELECT setval(pg_get_serial_sequence('bons_reception','id'), MAX(id)) FROM bons_reception");
 }
 }

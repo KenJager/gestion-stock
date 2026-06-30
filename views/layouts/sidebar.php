@@ -25,7 +25,7 @@ $navItems = [
             ['libelle' => 'Bons de réception',      'chemin' => '/appros/receptions'],
             ['libelle' => 'Factures fournisseurs',  'chemin' => '/appros/factures'],
             ['libelle' => 'Entrées (dons)',         'chemin' => '/appros/dons'],
-            ['libelle' => 'Corbeille', 'chemin' => '/appros/archives'],
+            ['libelle' => 'Corbeille', 'chemin' => '/appros/corbeille'],
             ['separateur' => 'États'],
             ['libelle' => 'État journalier',        'chemin' => '/appros/etats/journalier'],
             ['libelle' => 'État annuel',            'chemin' => '/appros/etats/annuel'],
@@ -155,12 +155,12 @@ if (!empty($moduleActif) && !in_array($moduleActif, $openModules)) {
                             <div class="submenu">
                                 <?php foreach ($item['sousmenu'] as $sous): ?>
                                     <?php if (isset($sous['separateur'])): ?>
-                                        <p class="submenu-separateur"><?= htmlspecialchars($sous['separateur'] ?? '') ?></p>
+                                        <p class="submenu-separateur"><?= htmlspecialchars(($sous['separateur'] ?? '') ?? '') ?></p>
                                         <?php continue; ?>
                                     <?php endif; ?>
 
                                     <?php if (!isset($sous['droit']) || $sous['droit'] === null || \Auth::peut($sous['droit'])): ?>
-                                        <?php $sousChemin = $sous['chemin'] ?? '#'; $sousLib = $sous['libelle'] ?? ''; ?>
+                                        <?php $sousChemin = $sous['chemin'] ?? $sous['url'] ?? '#'; $sousLib = $sous['libelle'] ?? ''; ?>
                                         <a href="<?= BASE_URL . $sousChemin ?>"
                                            class="submenu-link"
                                            data-nav-close>

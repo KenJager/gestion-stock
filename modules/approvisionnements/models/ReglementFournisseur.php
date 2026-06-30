@@ -68,4 +68,24 @@ class ReglementFournisseur extends Model {
         $sql = "DELETE FROM " . $this->table . " WHERE id = :id";
         $this->requete($sql, [':id' => $id]);
     }
+
+    public function restaurer(array $principal): void {
+        $this->requete(
+            "INSERT INTO reglements_fournisseur
+                (id, facture_id, date_reglement, montant, mode_paiement, reference, notes, banque_id)
+             VALUES
+                (:id, :facture_id, :date_reglement, :montant, :mode_paiement, :reference, :notes, :banque_id)",
+            [
+                ':id'             => (int)   $principal['id'],
+                ':facture_id'     => (int)   $principal['facture_id'],
+                ':date_reglement' =>          $principal['date_reglement'],
+                ':montant'        => (float)  $principal['montant'],
+                ':mode_paiement'  =>          $principal['mode_paiement'] ?: null,
+                ':reference'      =>          $principal['reference'] ?: null,
+                ':notes'          =>          $principal['notes'] ?: null,
+                ':banque_id'      =>          $principal['banque_id'] ? (int) $principal['banque_id'] : null,
+            ]
+        );
+        Database::connexion()->exec("SELECT setval(pg_get_serial_sequence('reglements_fournisseur','id'), MAX(id)) FROM reglements_fournisseur");
+    }
 }

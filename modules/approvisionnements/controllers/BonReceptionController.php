@@ -4,6 +4,7 @@
 namespace approvisionnements\controllers;
 
 require_once ROOT . '/core/Controller.php';
+require_once ROOT . '/core/Corbeille.php';
 require_once ROOT . '/modules/approvisionnements/models/BonReception.php';
 require_once ROOT . '/modules/approvisionnements/models/Produit.php';
 
@@ -16,7 +17,7 @@ class BonReceptionController extends Controller {
     private BonReception $modele;
     
     public function __construct() {
-        //parent::__construct();
+        parent::__construct();
         $this->modele = new BonReception();
     }
     
@@ -142,8 +143,11 @@ class BonReceptionController extends Controller {
             return;
         }
         
-        require_once ROOT . '/vendor/fpdf/fpdf.php';
-        
+        require_once ROOT . '/vendor/autoload.php';
+        if (!class_exists('FPDF') && class_exists('Fpdf\\Fpdf')) {
+            class_alias('Fpdf\\Fpdf', 'FPDF');
+        }
+
         $pdf = new \FPDF();
         $pdf->AddPage();
         $pdf->SetFont('Arial', 'B', 16);
@@ -253,10 +257,24 @@ class BonReceptionController extends Controller {
      */
     public function supprimer(int $id): void {
         $this->verifierMethode('POST');
-        
+
         try {
+            $reception = $this->modele->trouverComplet($id);
+            if (!$reception) {
+                $_SESSION['error'] = 'Réception non trouvée.';
+                $this->redirigerVers('/appros/receptions');
+                return;
+            }
+
+            \Corbeille::archiver(
+                'bons_reception',
+                $reception,
+                ['lignes_reception' => $reception['lignes']],
+                $reception['numero']
+            );
+
             $this->modele->supprimer($id);
-            $_SESSION['success'] = 'Réception supprimée avec succès. Le stock a été restauré.';
+            $_SESSION['success'] = 'Réception supprimée avec succès. Elle est disponible dans la corbeille.';
             $this->redirigerVers('/appros/receptions');
             
         } catch (\Exception $e) {

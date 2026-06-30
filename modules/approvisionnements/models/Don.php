@@ -217,12 +217,48 @@ public function listerTout(): array {
             $sql = "DELETE FROM " . $this->table . " WHERE id = :id";
             $stmt = $db->prepare($sql);
             $stmt->execute([':id' => $id]);
-            
+
             $db->commit();
-            
+
         } catch (\Exception $e) {
             $db->rollBack();
             throw $e;
         }
+    }
+
+    public function restaurer(array $principal, array $lignes): void {
+        $db = \Database::connexion();
+
+        $db->prepare(
+            "INSERT INTO entrees_dons (id, numero, donateur, date_entree, notes)
+             VALUES (:id, :numero, :donateur, :date_entree, :notes)"
+        )->execute([
+            ':id'          => (int) $principal['id'],
+            ':numero'      =>        $principal['numero'],
+            ':donateur'    =>        $principal['donateur'] ?: null,
+            ':date_entree' =>        $principal['date_entree'],
+            ':notes'       =>        $principal['notes'] ?: null,
+        ]);
+
+        $stmtLigne = $db->prepare(
+            "INSERT INTO lignes_entree_don
+                (id, entree_don_id, produit_id, quantite, valeur_estimee, date_peremption)
+             VALUES (:id, :entree_don_id, :produit_id, :quantite, :valeur_estimee, :date_peremption)"
+        );
+        $stmtStock = $db->prepare("UPDATE produits SET stock_actuel = stock_actuel + :qte WHERE id = :produit_id");
+
+        foreach ($lignes as $l) {
+            $stmtLigne->execute([
+                ':id'           => (int)   $l['id'],
+                ':entree_don_id'=> (int)   $principal['id'],
+                ':produit_id'   => (int)   $l['produit_id'],
+                ':quantite'     => (float) $l['quantite'],
+                ':valeur_estimee'=> (float) ($l['valeur_estimee'] ?? 0),
+                ':date_peremption'=> $l['date_peremption'] ?: null,
+            ]);
+            $stmtStock->execute([':qte' => (float) $l['quantite'], ':produit_id' => (int) $l['produit_id']]);
+        }
+
+        $db->exec("SELECT setval(pg_get_serial_sequence('entrees_dons','id'), MAX(id)) FROM entrees_dons");
     }
 }

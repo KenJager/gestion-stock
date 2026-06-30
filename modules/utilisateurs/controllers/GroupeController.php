@@ -100,26 +100,38 @@ class GroupeController extends \Controller {
         \Auth::verifierDroit('USERS_SUPPRIMER');
         $this->verifierMethode('POST');
 
-        if ($this->modele->aDesUtilisateurs($id)) {
-            $_SESSION['erreur'] = 'Impossible de supprimer ce groupe : des utilisateurs y sont encore affectés.';
-            $this->redirigerVers('/groupes');
-        }
-
         $groupe = $this->modele->trouverParId($id);
 
-        // Récupérer les droits liés (groupes_droits) pour archivage
+        // Récupérer les droits liés pour archivage
         $sqlDroits = "SELECT groupe_id, droit_id FROM groupes_droits WHERE groupe_id = :id";
         $droitsLies = \Database::query($sqlDroits, [':id' => $id])->fetchAll();
+
+        // Récupérer les utilisateurs du groupe pour archivage en cascade
+        $sqlUsers = "SELECT id, nom, prenom, login, mot_de_passe, email, groupe_id, actif, date_creation, derniere_connexion
+                     FROM utilisateurs WHERE groupe_id = :id";
+        $utilisateurs = \Database::query($sqlUsers, [':id' => $id])->fetchAll();
+
+        $nbUsers = count($utilisateurs);
+        $libelle = $groupe['nom'] . ($nbUsers > 0 ? " ({$nbUsers} utilisateur(s))" : '');
 
         \Corbeille::archiver(
             'groupes_utilisateurs',
             $groupe,
-            ['groupes_droits' => $droitsLies],
-            $groupe['nom']
+            [
+                'groupes_droits' => $droitsLies,
+                'utilisateurs'   => $utilisateurs,
+            ],
+            $libelle
         );
 
+        // La suppression du groupe déclenche automatiquement le CASCADE DELETE en base
         $this->modele->supprimer($id);
-        $_SESSION['succes'] = 'Groupe supprimé et déplacé vers la corbeille.';
+
+        $msg = 'Groupe supprimé et déplacé vers la corbeille.';
+        if ($nbUsers > 0) {
+            $msg .= " {$nbUsers} utilisateur(s) archivé(s) en cascade.";
+        }
+        $_SESSION['succes'] = $msg;
         $this->redirigerVers('/groupes');
     }
 

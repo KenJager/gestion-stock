@@ -188,8 +188,13 @@ Router::get( '/appros/etats/annuel',           'approvisionnements\controllers\E
 Router::get( '/appros/etats/journalier/pdf',   'approvisionnements\controllers\EtatController@journalierPdf');
 Router::get( '/appros/etats/annuel/pdf',       'approvisionnements\controllers\EtatController@annuelPdf');
 
-Router::get( '/appros/archives',                    'approvisionnements\controllers\ArchiveController@index');
-Router::get( '/appros/archives/{filename}',         'approvisionnements\controllers\ArchiveController@detail');
+Router::get( '/appros/corbeille',          'approvisionnements\controllers\CorbeilleApprovisionnementController@index');
+Router::post('/appros/corbeille/restaurer','approvisionnements\controllers\CorbeilleApprovisionnementController@restaurer');
+Router::post('/appros/corbeille/purger',   'approvisionnements\controllers\CorbeilleApprovisionnementController@purger');
+
+// Archives XML anciennes (rétrocompatibilité)
+Router::get( '/appros/archives',                      'approvisionnements\controllers\ArchiveController@index');
+Router::get( '/appros/archives/{filename}',           'approvisionnements\controllers\ArchiveController@detail');
 Router::post('/appros/archives/{filename}/restaurer', 'approvisionnements\controllers\ArchiveController@restaurer');
 Router::post('/appros/archives/{filename}/supprimer', 'approvisionnements\controllers\ArchiveController@supprimerArchive');
 
@@ -209,30 +214,34 @@ Router::post('/ventes/commandes/{id}/supprimer','ventes\controllers\CommandeClie
 Router::get( '/ventes/commandes/{id}/pdf',     'ventes\controllers\CommandeClientController@pdf');
 
 // Bons de livraison
-Router::get( '/ventes/livraisons',             'ventes\controllers\LivraisonController@index');
-Router::get( '/ventes/livraisons/creer',       'ventes\controllers\LivraisonController@creer');
-Router::post('/ventes/livraisons/creer',       'ventes\controllers\LivraisonController@enregistrer');
-Router::get( '/ventes/livraisons/{id}',        'ventes\controllers\LivraisonController@detail');
-Router::get( '/ventes/livraisons/{id}/modifier','ventes\controllers\LivraisonController@editer');
-Router::post('/ventes/livraisons/{id}/modifier','ventes\controllers\LivraisonController@mettreAJour');
-Router::get( '/ventes/livraisons/{id}/pdf',    'ventes\controllers\LivraisonController@pdf');
+Router::get( '/ventes/livraisons',                  'ventes\controllers\LivraisonController@index');
+Router::get( '/ventes/livraisons/creer',            'ventes\controllers\LivraisonController@creer');
+Router::post('/ventes/livraisons/creer',            'ventes\controllers\LivraisonController@enregistrer');
+Router::get( '/ventes/livraisons/{id}',             'ventes\controllers\LivraisonController@detail');
+Router::get( '/ventes/livraisons/{id}/modifier',    'ventes\controllers\LivraisonController@editer');
+Router::post('/ventes/livraisons/{id}/modifier',    'ventes\controllers\LivraisonController@mettreAJour');
+Router::post('/ventes/livraisons/{id}/supprimer',   'ventes\controllers\LivraisonController@supprimer');
+Router::get( '/ventes/livraisons/{id}/pdf',         'ventes\controllers\LivraisonController@pdf');
 
 // Factures clients
-Router::get( '/ventes/factures',               'ventes\controllers\FactureClientController@index');
-Router::get( '/ventes/factures/{id}',          'ventes\controllers\FactureClientController@detail');
-Router::get( '/ventes/factures/{id}/modifier', 'ventes\controllers\FactureClientController@editer');
-Router::post('/ventes/factures/{id}/modifier', 'ventes\controllers\FactureClientController@mettreAJour');
-Router::get( '/ventes/factures/{id}/pdf',      'ventes\controllers\FactureClientController@pdf');
+Router::get( '/ventes/factures',                    'ventes\controllers\FactureClientController@index');
+Router::post('/ventes/factures/generer',            'ventes\controllers\FactureClientController@generer');
+Router::get( '/ventes/factures/{id}',               'ventes\controllers\FactureClientController@detail');
+Router::get( '/ventes/factures/{id}/modifier',      'ventes\controllers\FactureClientController@editer');
+Router::post('/ventes/factures/{id}/modifier',      'ventes\controllers\FactureClientController@mettreAJour');
+Router::post('/ventes/factures/{id}/supprimer',     'ventes\controllers\FactureClientController@supprimer');
+Router::get( '/ventes/factures/{id}/pdf',           'ventes\controllers\FactureClientController@pdf');
 
 // Règlements clients
 Router::get( '/ventes/reglements',             'ventes\controllers\ReglementClientController@index');
 Router::post('/ventes/reglements/creer',       'ventes\controllers\ReglementClientController@enregistrer');
 
 // Ventes comptant
-Router::get( '/ventes/comptant',               'ventes\controllers\VenteComptantController@index');
-Router::get( '/ventes/comptant/creer',         'ventes\controllers\VenteComptantController@creer');
-Router::post('/ventes/comptant/creer',         'ventes\controllers\VenteComptantController@enregistrer');
-Router::get( '/ventes/comptant/{id}/pdf',      'ventes\controllers\VenteComptantController@pdf');
+Router::get( '/ventes/comptant',                    'ventes\controllers\VenteComptantController@index');
+Router::get( '/ventes/comptant/creer',              'ventes\controllers\VenteComptantController@creer');
+Router::post('/ventes/comptant/creer',              'ventes\controllers\VenteComptantController@enregistrer');
+Router::post('/ventes/comptant/{id}/supprimer',     'ventes\controllers\VenteComptantController@supprimer');
+Router::get( '/ventes/comptant/{id}/pdf',           'ventes\controllers\VenteComptantController@pdf');
 
 // Sorties produits
 Router::get( '/ventes/sorties',                'ventes\controllers\BonSortieController@index');
@@ -247,6 +256,11 @@ Router::get( '/ventes/etats/journalier',       'ventes\controllers\EtatControlle
 Router::get( '/ventes/etats/annuel',           'ventes\controllers\EtatController@annuel');
 Router::get( '/ventes/etats/journalier/pdf',   'ventes\controllers\EtatController@journalierPdf');
 Router::get( '/ventes/etats/annuel/pdf',       'ventes\controllers\EtatController@annuelPdf');
+
+// Corbeille (module Ventes)
+Router::get( '/ventes/corbeille',              'ventes\controllers\CorbeilleVentesController@index');
+Router::post('/ventes/corbeille/restaurer',    'ventes\controllers\CorbeilleVentesController@restaurer');
+Router::post('/ventes/corbeille/purger',       'ventes\controllers\CorbeilleVentesController@purger');
 // Paramètres de connexion (utilisateur courant)
 Router::get( '/parametres',  'utilisateurs\controllers\ParametreController@index');
 Router::post('/parametres',  'utilisateurs\controllers\ParametreController@mettreAJour');

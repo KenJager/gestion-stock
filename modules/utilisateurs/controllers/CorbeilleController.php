@@ -49,11 +49,11 @@ class CorbeilleController extends \Controller {
         $service = new CorbeilleService();
 
         try {
-            match ($donnees['table']) {
+            $message = match ($donnees['table']) {
                 'utilisateurs'         => $service->restaurerUtilisateur($fichier),
                 'groupes_utilisateurs' => $service->restaurerGroupe($fichier),
             };
-            $_SESSION['succes'] = 'Élément restauré avec succès.';
+            $_SESSION['succes'] = $message ?: 'Élément restauré avec succès.';
         } catch (\RuntimeException $erreur) {
             $_SESSION['erreur'] = $erreur->getMessage();
         }

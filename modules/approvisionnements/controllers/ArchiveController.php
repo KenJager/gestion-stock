@@ -15,7 +15,7 @@ class ArchiveController extends Controller {
     private string $archiveDir;
     
     public function __construct() {
-        // parent::__construct(); // Désactivé pour les tests
+        parent::__construct();
         $this->archiveDir = ROOT . '/storage/archives/commandes/';
     }
     

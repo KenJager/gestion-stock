@@ -4,6 +4,7 @@
 namespace approvisionnements\controllers;
 
 require_once ROOT . '/core/Controller.php';
+require_once ROOT . '/core/Corbeille.php';
 require_once ROOT . '/modules/approvisionnements/models/ReglementFournisseur.php';
 require_once ROOT . '/modules/approvisionnements/models/FactureFournisseur.php';
 // Banque model may live in structure; require if exists
@@ -21,7 +22,7 @@ class ReglementFournisseurController extends Controller {
     private ReglementFournisseur $modele;
     
     public function __construct() {
-        // parent::__construct(); // Désactivé pour les tests
+        parent::__construct();
         $this->modele = new ReglementFournisseur();
     }
     
@@ -109,10 +110,6 @@ class ReglementFournisseurController extends Controller {
             return;
         }
         
-        if ($montant_centimes > $solde_centimes) {
-            $montant = $solde_centimes / 100;
-        }
-        
         try {
             $reglementId = $this->modele->creer([
                 ':facture_id' => $facture_id,
@@ -147,8 +144,11 @@ class ReglementFournisseurController extends Controller {
             return;
         }
         
-        require_once ROOT . '/vendor/fpdf/fpdf.php';
-        
+        require_once ROOT . '/vendor/autoload.php';
+        if (!class_exists('FPDF') && class_exists('Fpdf\\Fpdf')) {
+            class_alias('Fpdf\\Fpdf', 'FPDF');
+        }
+
         $pdf = new \FPDF();
         $pdf->AddPage();
         $pdf->SetFont('Arial', 'B', 16);
@@ -192,16 +192,23 @@ class ReglementFournisseurController extends Controller {
      */
     public function supprimer(int $id): void {
         $this->verifierMethode('POST');
-        
+
         $reglement = $this->modele->trouverParId($id);
         if (!$reglement) {
             $_SESSION['error'] = 'Règlement non trouvé.';
             $this->redirigerVers('/appros/reglements');
             return;
         }
-        
+
         $facture_id = $reglement['facture_id'];
-        
+
+        \Corbeille::archiver(
+            'reglements_fournisseur',
+            $reglement,
+            [],
+            'Règlement #' . $id . ' — ' . ($reglement['facture_numero'] ?? '')
+        );
+
         try {
             $this->modele->supprimer($id);
             

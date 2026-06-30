@@ -4,6 +4,7 @@
 namespace approvisionnements\controllers;
 
 require_once ROOT . '/core/Controller.php';
+require_once ROOT . '/core/Corbeille.php';
 require_once ROOT . '/modules/approvisionnements/models/FactureFournisseur.php';
 require_once ROOT . '/modules/approvisionnements/models/BonReception.php';
 
@@ -16,6 +17,7 @@ class FactureFournisseurController extends Controller {
     private FactureFournisseur $modele;
     
     public function __construct() {
+        parent::__construct();
         $this->modele = new FactureFournisseur();
     }
     
@@ -258,8 +260,14 @@ class FactureFournisseurController extends Controller {
             return;
         }
         
+        \Corbeille::archiver(
+            'factures_fournisseur',
+            $facture,
+            [],
+            $facture['numero'] . ' — ' . ($facture['fournisseur_nom'] ?? '')
+        );
         $this->modele->supprimer($id);
-        $_SESSION['success'] = 'Facture supprimée.';
+        $_SESSION['success'] = 'Facture supprimée. Elle est disponible dans la corbeille.';
         $this->redirigerVers('/appros/factures');
     }
     
@@ -278,8 +286,11 @@ class FactureFournisseurController extends Controller {
             return;
         }
         
-        require_once ROOT . '/vendor/fpdf/fpdf.php';
-        
+        require_once ROOT . '/vendor/autoload.php';
+        if (!class_exists('FPDF') && class_exists('Fpdf\\Fpdf')) {
+            class_alias('Fpdf\\Fpdf', 'FPDF');
+        }
+
         $pdf = new \FPDF();
         $pdf->AddPage();
         $pdf->SetFont('Arial', 'B', 16);

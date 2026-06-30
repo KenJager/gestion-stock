@@ -4,6 +4,7 @@
 namespace approvisionnements\controllers;
 
 require_once ROOT . '/core/Controller.php';
+require_once ROOT . '/core/Corbeille.php';
 require_once ROOT . '/modules/approvisionnements/models/Don.php';
 require_once ROOT . '/modules/approvisionnements/models/Produit.php';
 
@@ -16,7 +17,7 @@ class DonController extends Controller {
     private Don $modele;
     
     public function __construct() {
-        // parent::__construct(); // Désactivé pour les tests
+        parent::__construct();
         $this->modele = new Don();
     }
     
@@ -149,10 +150,24 @@ class DonController extends Controller {
      */
     public function supprimer(int $id): void {
         $this->verifierMethode('POST');
-        
+
         try {
+            $don = $this->modele->trouverComplet($id);
+            if (!$don) {
+                $_SESSION['error'] = 'Don non trouvé.';
+                $this->redirigerVers('/appros/dons');
+                return;
+            }
+
+            \Corbeille::archiver(
+                'entrees_dons',
+                $don,
+                ['lignes_entree_don' => $don['lignes']],
+                $don['numero'] . ' — ' . ($don['donateur'] ?? 'Anonyme')
+            );
+
             $this->modele->supprimer($id);
-            $_SESSION['success'] = 'Don supprimé avec succès. Stock restauré.';
+            $_SESSION['success'] = 'Don supprimé avec succès. Il est disponible dans la corbeille.';
             $this->redirigerVers('/appros/dons');
             
         } catch (\Exception $e) {
@@ -191,8 +206,11 @@ class DonController extends Controller {
             return;
         }
         
-        require_once ROOT . '/vendor/fpdf/fpdf.php';
-        
+        require_once ROOT . '/vendor/autoload.php';
+        if (!class_exists('FPDF') && class_exists('Fpdf\\Fpdf')) {
+            class_alias('Fpdf\\Fpdf', 'FPDF');
+        }
+
         $pdf = new \FPDF();
         $pdf->AddPage();
         $pdf->SetFont('Arial', 'B', 16);

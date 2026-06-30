@@ -128,6 +128,45 @@ public function supprimer(int $id): void {
     $sql = "DELETE FROM " . $this->table . " WHERE id = :id";
     $this->requete($sql, [':id' => $id]);
 }
+
+public function restaurer(array $principal, array $lignes): void {
+    $this->requete(
+        "INSERT INTO bons_commande_fournisseur
+            (id, numero, fournisseur_id, date_commande, statut, montant_ht, montant_tva, montant_ttc, notes)
+         VALUES
+            (:id, :numero, :fournisseur_id, :date_commande, :statut, :montant_ht, :montant_tva, :montant_ttc, :notes)",
+        [
+            ':id'            => (int)    $principal['id'],
+            ':numero'        =>           $principal['numero'],
+            ':fournisseur_id'=> (int)    $principal['fournisseur_id'],
+            ':date_commande' =>           $principal['date_commande'],
+            ':statut'        =>           $principal['statut'],
+            ':montant_ht'    => (float)  $principal['montant_ht'],
+            ':montant_tva'   => (float)  $principal['montant_tva'],
+            ':montant_ttc'   => (float)  $principal['montant_ttc'],
+            ':notes'         =>           $principal['notes'] ?: null,
+        ]
+    );
+
+    foreach ($lignes as $l) {
+        $this->requete(
+            "INSERT INTO lignes_commande_fournisseur
+                (id, bon_commande_id, produit_id, quantite_commandee, prix_unitaire_ht, tva)
+             VALUES
+                (:id, :bon_commande_id, :produit_id, :quantite_commandee, :prix_unitaire_ht, :tva)",
+            [
+                ':id'                 => (int)   $l['id'],
+                ':bon_commande_id'    => (int)   $principal['id'],
+                ':produit_id'         => (int)   $l['produit_id'],
+                ':quantite_commandee' => (float) $l['quantite_commandee'],
+                ':prix_unitaire_ht'   => (float) $l['prix_unitaire_ht'],
+                ':tva'                => (float) $l['tva'],
+            ]
+        );
+    }
+
+    Database::connexion()->exec("SELECT setval(pg_get_serial_sequence('bons_commande_fournisseur','id'), MAX(id)) FROM bons_commande_fournisseur");
+}
 public function trouverParId(int $id): array {
     $sql = "SELECT bcf.*, f.raison_sociale AS fournisseur_nom
             FROM " . $this->table . " bcf

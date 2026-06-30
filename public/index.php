@@ -66,7 +66,12 @@ require_once ROOT . '/core/Controller.php';
 require_once ROOT . '/core/Router.php';
 
 // ── 7. Configuration base de données ──────────────────────────────────────────
-Database::chargerConfig(require ROOT . '/config/database.php');
+$dbConfig = require ROOT . '/config/database.php';
+$dbLocalFile = ROOT . '/config/database.local.php';
+if (file_exists($dbLocalFile)) {
+    $dbConfig = array_merge($dbConfig, require $dbLocalFile);
+}
+Database::chargerConfig($dbConfig);
 
 // ── 8. Démarrage de la session ────────────────────────────────────────────────
 Auth::demarrer();

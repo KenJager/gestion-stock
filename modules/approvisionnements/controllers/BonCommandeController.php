@@ -4,6 +4,7 @@
 namespace approvisionnements\controllers;
 
 require_once ROOT . '/core/Controller.php';
+require_once ROOT . '/core/Corbeille.php';
 require_once ROOT . '/modules/approvisionnements/models/BonCommande.php';
 require_once ROOT . '/modules/approvisionnements/models/Fournisseur.php';
 require_once ROOT . '/modules/approvisionnements/models/Produit.php';
@@ -18,7 +19,7 @@ class BonCommandeController extends Controller {
     private BonCommande $modele;
     
     public function __construct() {
-        // parent::__construct();
+        parent::__construct();
         $this->modele = new BonCommande();
     }
     
@@ -140,8 +141,11 @@ class BonCommandeController extends Controller {
             return;
         }
         
-        require_once ROOT . '/vendor/fpdf/fpdf.php';
-        
+        require_once ROOT . '/vendor/autoload.php';
+        if (!class_exists('FPDF') && class_exists('Fpdf\\Fpdf')) {
+            class_alias('Fpdf\\Fpdf', 'FPDF');
+        }
+
         $pdf = new \FPDF();
         $pdf->AddPage();
         $pdf->SetFont('Arial', 'B', 16);
@@ -354,42 +358,15 @@ class BonCommandeController extends Controller {
             return;
         }
         
-        $this->sauvegarderXML($commande);
+        \Corbeille::archiver(
+            'bons_commande_fournisseur',
+            $commande,
+            ['lignes_commande_fournisseur' => $commande['lignes']],
+            $commande['numero'] . ' — ' . ($commande['fournisseur_nom'] ?? '')
+        );
         $modele->supprimer($id);
-        
-        $_SESSION['success'] = 'Commande supprimée avec succès. Une sauvegarde XML a été créée.';
+
+        $_SESSION['success'] = 'Commande supprimée avec succès. Elle est disponible dans la corbeille.';
         $this->redirigerVers('/appros/commandes');
-    }
-    
-    /**
-     * Sauvegarde une commande en XML
-     */
-    private function sauvegarderXML(array $commande): void {
-        $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><archive></archive>');
-        $xml->addChild('type', 'commande_fournisseur');
-        $xml->addChild('date_suppression', date('Y-m-d H:i:s'));
-        $xml->addChild('utilisateur', $_SESSION['utilisateur_nom'] ?? 'Inconnu');
-        
-        $commandeNode = $xml->addChild('commande');
-        foreach ($commande as $key => $value) {
-            if ($key === 'lignes') continue;
-            $commandeNode->addChild($key, htmlspecialchars((string)$value));
-        }
-        
-        $lignesNode = $xml->addChild('lignes');
-        foreach ($commande['lignes'] as $ligne) {
-            $ligneNode = $lignesNode->addChild('ligne');
-            foreach ($ligne as $key => $value) {
-                $ligneNode->addChild($key, htmlspecialchars((string)$value));
-            }
-        }
-        
-        $dir = ROOT . '/storage/archives/commandes/';
-        if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
-        }
-        
-        $filename = $dir . $commande['numero'] . '_' . date('Y-m-d_H-i-s') . '.xml';
-        $xml->asXML($filename);
     }
 }

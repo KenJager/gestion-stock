@@ -171,7 +171,32 @@ class FactureFournisseur extends Model {
         if ($id <= 0) {
             return;
         }
-        
         parent::supprimer($id);
+    }
+
+    public function restaurer(array $principal): void {
+        $this->requete(
+            "INSERT INTO factures_fournisseur
+                (id, numero, bon_reception_id, fournisseur_id, date_facture, date_echeance,
+                 statut, montant_ht, montant_tva, montant_ttc, montant_regle, notes)
+             VALUES
+                (:id, :numero, :bon_reception_id, :fournisseur_id, :date_facture, :date_echeance,
+                 :statut, :montant_ht, :montant_tva, :montant_ttc, :montant_regle, :notes)",
+            [
+                ':id'              => (int)   $principal['id'],
+                ':numero'          =>          $principal['numero'],
+                ':bon_reception_id'=> $principal['bon_reception_id'] ? (int) $principal['bon_reception_id'] : null,
+                ':fournisseur_id'  => (int)   $principal['fournisseur_id'],
+                ':date_facture'    =>          $principal['date_facture'],
+                ':date_echeance'   =>          $principal['date_echeance'] ?: null,
+                ':statut'          =>          $principal['statut'] ?? 'EN_ATTENTE',
+                ':montant_ht'      => (float)  $principal['montant_ht'],
+                ':montant_tva'     => (float)  $principal['montant_tva'],
+                ':montant_ttc'     => (float)  $principal['montant_ttc'],
+                ':montant_regle'   => (float)  ($principal['montant_regle'] ?? 0),
+                ':notes'           =>          $principal['notes'] ?: null,
+            ]
+        );
+        Database::connexion()->exec("SELECT setval(pg_get_serial_sequence('factures_fournisseur','id'), MAX(id)) FROM factures_fournisseur");
     }
 }
