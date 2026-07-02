@@ -10,10 +10,12 @@ require_once ROOT . '/modules/ventes/models/BonSortie.php';
 require_once ROOT . '/modules/ventes/services/VenteService.php';
 require_once ROOT . '/modules/ventes/services/StockService.php';
 require_once ROOT . '/modules/ventes/pdf/BonSortiePDF.php';
+require_once ROOT . '/modules/structure/models/ProduitModel.php';
 
 use Controller;
 use Auth;
 use Corbeille;
+use ProduitModel;
 use ventes\models\BonSortie;
 use ventes\services\VenteService;
 use ventes\services\StockService;
@@ -24,12 +26,14 @@ class BonSortieController extends Controller {
     private BonSortie    $modele;
     private VenteService $service;
     private StockService $stock;
+    private ProduitModel $produitModel;
 
     public function __construct() {
         parent::__construct();
-        $this->modele  = new BonSortie();
-        $this->service = new VenteService();
-        $this->stock   = new StockService();
+        $this->modele       = new BonSortie();
+        $this->service      = new VenteService();
+        $this->stock        = new StockService();
+        $this->produitModel = new ProduitModel();
     }
 
     // GET /ventes/sorties
@@ -47,6 +51,7 @@ class BonSortieController extends Controller {
             'titre'      => 'Nouveau bon de sortie',
             'moduleActif'=> 'ventes',
             'sortie'     => null,
+            'produits'   => $this->produitModel->listerActifs(),
         ]);
     }
 
@@ -67,6 +72,7 @@ class BonSortieController extends Controller {
                 'titre'      => 'Nouveau bon de sortie',
                 'moduleActif'=> 'ventes',
                 'sortie'     => null,
+                'produits'   => $this->produitModel->listerActifs(),
                 'erreur'     => $e->getMessage(),
             ]);
         }
@@ -79,6 +85,7 @@ class BonSortieController extends Controller {
                 'titre'      => 'Modifier le bon de sortie',
                 'moduleActif'=> 'ventes',
                 'sortie'     => $this->modele->trouverParId($id),
+                'produits'   => $this->produitModel->listerActifs(),
             ]);
         } catch (\RuntimeException $e) {
             $this->erreur404($e->getMessage());

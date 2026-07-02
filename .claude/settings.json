@@ -30,7 +30,22 @@
       "Bash(php -l /home/lambou/gestion-stock/modules/utilisateurs/controllers/GroupeController.php)",
       "Bash(php -l /home/lambou/gestion-stock/modules/utilisateurs/services/CorbeilleService.php)",
       "Bash(php -l /home/lambou/gestion-stock/modules/utilisateurs/controllers/CorbeilleController.php)",
-      "Bash(PGPASSWORD=123 psql -U postgres -d projet_bd_xml -c \"SELECT conname, confdeltype FROM pg_constraint WHERE conname = 'utilisateurs_groupe_id_fkey';\")"
+      "Bash(PGPASSWORD=123 psql -U postgres -d projet_bd_xml -c \"SELECT conname, confdeltype FROM pg_constraint WHERE conname = 'utilisateurs_groupe_id_fkey';\")",
+      "Bash(sudo systemctl status postgresql)",
+      "Bash(pg_lsclusters)",
+      "Bash(psql -U postgres -c \"\\\\l\")",
+      "Bash(psql -h 127.0.0.1 -p 5432 -U postgres -d projet_bd_xml -c \"SELECT 1;\")",
+      "Bash(grep -E \"^host|^local\" /etc/postgresql/18/main/pg_hba.conf 2>/dev/null | head -15)",
+      "Read(//etc/postgresql/18/main/**)",
+      "Read(//etc/postgresql/**)",
+      "Bash(sudo cat /etc/postgresql/18/main/pg_hba.conf)",
+      "Bash(grep -v \"^$\")",
+      "Bash(psql -U postgres -d projet_bd_xml -c \"SELECT 1;\")",
+      "Bash(psql -U postgres -c \"SHOW unix_socket_directories;\")",
+      "Bash(psql -U postgres -d projet_bd_xml -c ' *)",
+      "Bash(psql -U postgres -d postgres -c ' *)",
+      "Bash(psql -U postgres -d _schema_test_tmp -f /home/lambou/gestion-stock/config/schema.sql)",
+      "Bash(psql -U postgres -d postgres -c \"DROP DATABASE _schema_test_tmp;\")"
     ]
   }
 }

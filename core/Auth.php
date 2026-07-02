@@ -30,11 +30,11 @@ class Auth {
     }
 
     public static function estConnecte(): bool {
-        return isset($_SESSION['connecte']) && $_SESSION['connecte'] === true;
+        return isset($_SESSION['connecte']) && $_SESSION['connecte'] === true;        //envoie true si la variable est 'connecte' exite en sexion
     }
 
     public static function utilisateurCourant(): ?array {
-        if (!self::estConnecte()) return null;
+        if (!self::estConnecte()) return null;                                  
         return [
             'id'         => $_SESSION['utilisateur_id'],
             'nom'        => $_SESSION['utilisateur_nom']   ?? '',

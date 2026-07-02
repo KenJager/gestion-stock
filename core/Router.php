@@ -11,7 +11,7 @@ class Router {
 
     public static function post(string $chemin, string $handler): void {
         self::ajouterRoute('POST', $chemin, $handler);
-    }
+    }                  
 
     private static function ajouterRoute(string $methode, string $chemin, string $handler): void {
         $pattern = preg_replace('/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/', '(?P<$1>[^/]+)', $chemin);

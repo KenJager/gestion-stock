@@ -10,6 +10,14 @@ class ProduitModel extends Model
         /**
      * Liste tous les produits avec leur famille et leur type (père/fils/simple)
      */
+    public function listerActifs(): array {
+        $sql = "SELECT id, code, designation, unite, stock_actuel
+                FROM {$this->table}
+                WHERE actif = true
+                ORDER BY designation";
+        return $this->pdo()->query($sql)->fetchAll();
+    }
+
     public function listerAvecFamille(): array {
         $sql = "SELECT p.*, 
                        f.libelle AS famille_libelle,

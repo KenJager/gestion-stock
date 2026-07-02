@@ -7,9 +7,7 @@ $action   = $edition
     ? BASE_URL . '/ventes/sorties/' . $sortie['id'] . '/modifier'
     : BASE_URL . '/ventes/sorties/creer';
 
-$produits = class_exists('Structure\models\Produit')
-    ? (new \Structure\models\Produit())->listerActifs()
-    : \ventes\Stubs\ProduitStub::listerActifs();
+
 ?>
 
 <?php if (!empty($erreur)): ?>
