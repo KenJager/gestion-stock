@@ -248,7 +248,8 @@ Router::get( '/ventes/sorties',                'ventes\controllers\BonSortieCont
 Router::get( '/ventes/sorties/creer',          'ventes\controllers\BonSortieController@creer');
 Router::post('/ventes/sorties/creer',          'ventes\controllers\BonSortieController@enregistrer');
 Router::get( '/ventes/sorties/{id}/modifier',  'ventes\controllers\BonSortieController@editer');
-Router::post('/ventes/sorties/{id}/modifier',  'ventes\controllers\BonSortieController@mettreAJour');
+Router::get( '/ventes/sorties/{id}/modifier',  'ventes\controllers\BonSortieController@editer');
+Router::post('/ventes/sorties/{id}/supprimer',  'ventes\controllers\BonSortieController@supprimer');
 Router::get( '/ventes/sorties/{id}/pdf',       'ventes\controllers\BonSortieController@pdf');
 
 // États / rapports
