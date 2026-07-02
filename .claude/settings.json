@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git pull *)"
+      "Bash(git pull *)",
+      "Bash(PGPASSWORD=\"\" psql -U lambou -d gestion_stock -c \"SELECT * FROM droits ORDER BY module, code;\")",
+      "Bash(psql -h /var/run/postgresql -U lambou -d gestion_stock -c \"SELECT * FROM droits ORDER BY module, code;\")",
+      "Bash(psql -h /var/run/postgresql -d gestion_stock -c \"SELECT * FROM droits ORDER BY module, code;\")",
+      "Bash(psql -h /var/run/postgresql -U postgres -d gestion_stock -c \"SELECT * FROM droits ORDER BY module, code;\")",
+      "Read(//etc/**)",
+      "Bash(psql -h /var/run/postgresql -U postgres -l)",
+      "Bash(psql -h /var/run/postgresql -U postgres -d projet_bd_xml -c \"SELECT * FROM droits ORDER BY module, code;\")",
+      "Bash(psql -h /var/run/postgresql -U postgres -d projet_bd_xml -c ' *)",
+      "Bash(psql -h /var/run/postgresql -U postgres -d projet_bd_xml -c \"\\\\dt\")"
     ]
   }
 }
