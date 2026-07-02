@@ -44,6 +44,9 @@ $navItems = [
             ['libelle' => 'Ventes comptant',       'chemin' => '/ventes/comptant'],
             ['libelle' => 'Sorties produits',      'chemin' => '/ventes/sorties'],
             ['libelle' => 'Corbeille',        'chemin' => '/ventes/corbeille'],
+            ['separateur' => 'États'],
+            ['libelle' => 'État journalier',        'chemin' => '/ventes/etats/journalier'],
+            ['libelle' => 'État annuel',            'chemin' => '/ventes/etats/annuel'],
         ],
     ],
     [
@@ -79,7 +82,7 @@ $navItems = [
             ['libelle' => 'Groupes',                'chemin' => '/groupes',       'droit' => 'USERS_MODIFIER'],
             ['libelle' => 'Droits d\'accès',        'chemin' => '/droits',        'droit' => 'USERS_MODIFIER'],
             ['libelle' => 'Paramètres de connexion','chemin' => '/parametres',    'droit' => null],
-            ['libelle' => 'Journal d\'audit',         'chemin' => '/audit',         'droit' => 'USERS_MODIFIER'],
+            ['libelle' => 'Journal d\'audit',         'chemin' => '/audit',         'droit' => 'AUDIT_LIRE'],
             ['libelle' => 'Corbeille',               'chemin' => '/utilisateurs/corbeille',     'droit' => 'USERS_MODIFIER'],
         ],
     ],

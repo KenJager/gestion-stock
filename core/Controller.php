@@ -21,9 +21,14 @@ abstract class Controller {
     protected function rendrePage(string $module, string $vue, array $donnees = []): void {
         extract($donnees);
 
-        $cheminVue = ROOT . "/modules/{$module}/views/{$vue}.php";
+        // Architecture MVC : la couche Vue est dans "Présentation/".
+        // Repli sur "views/" pour les modules non encore migrés.
+        $cheminVue = ROOT . "/modules/{$module}/Présentation/{$vue}.php";
         if (!file_exists($cheminVue)) {
-            $this->erreur404("Vue introuvable : modules/{$module}/views/{$vue}.php");
+            $cheminVue = ROOT . "/modules/{$module}/views/{$vue}.php";
+        }
+        if (!file_exists($cheminVue)) {
+            $this->erreur404("Vue introuvable : modules/{$module}/Présentation/{$vue}.php");
         }
 
         ob_start();
