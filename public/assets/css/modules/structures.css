@@ -1,0 +1,6 @@
+/* Module Structure - préfixe .structure- */
+.structure-produit-card { transition: box-shadow 0.2s; }
+.structure-produit-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.structure-fraction-ligne { background-color: #fef9c3; border-left: 4px solid #eab308; }
+.structure-stock-faible { color: #dc2626; font-weight: bold; }
+.structure-table-produits .stock-actuel[data-stock-faible="true"] { background-color: #fee2e2; }

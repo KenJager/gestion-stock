@@ -21,10 +21,14 @@ $navItems = [
         'chemin'  => '#',
         'droit'   => 'APPRO_LIRE',
         'sousmenu' => [
-            ['libelle' => 'Commandes fournisseurs', 'chemin' => '/approvisionnements/commandes'],
-            ['libelle' => 'Bons de réception',      'chemin' => '/approvisionnements/receptions'],
-            ['libelle' => 'Factures fournisseurs',  'chemin' => '/approvisionnements/factures'],
-            ['libelle' => 'Entrées (dons)',         'chemin' => '/approvisionnements/dons'],
+            ['libelle' => 'Commandes fournisseurs', 'chemin' => '/appros/commandes'],
+            ['libelle' => 'Bons de réception',      'chemin' => '/appros/receptions'],
+            ['libelle' => 'Factures fournisseurs',  'chemin' => '/appros/factures'],
+            ['libelle' => 'Entrées (dons)',         'chemin' => '/appros/dons'],
+            ['libelle' => 'Corbeille', 'chemin' => '/appros/corbeille'],
+            ['separateur' => 'États'],
+            ['libelle' => 'État journalier',        'chemin' => '/appros/etats/journalier'],
+            ['libelle' => 'État annuel',            'chemin' => '/appros/etats/annuel'],
         ],
     ],
     [
@@ -39,6 +43,7 @@ $navItems = [
             ['libelle' => 'Factures clients',      'chemin' => '/ventes/factures'],
             ['libelle' => 'Ventes comptant',       'chemin' => '/ventes/comptant'],
             ['libelle' => 'Sorties produits',      'chemin' => '/ventes/sorties'],
+            ['libelle' => 'Corbeille',        'chemin' => '/ventes/corbeille'],
         ],
     ],
     [
@@ -55,8 +60,9 @@ $navItems = [
             ['libelle' => 'Produits',         'chemin' => '/structure/produits'],
             ['libelle' => 'Fournisseurs',     'chemin' => '/structure/fournisseurs'],
             ['libelle' => 'Clients',          'chemin' => '/structure/clients'],
-            ['libelle' => 'Catégories clients','chemin' => '/structure/categories'],
+            ['libelle' => 'Catégories clients','chemin' => '/structure/categories-clients'],
             ['libelle' => 'Banques',          'chemin' => '/structure/banques'],
+            ['libelle' => 'Corbeille',        'chemin' => '/structure/corbeille', 'droit' => 'STRUCTURE_MODIFIER'],
         ],
     ],
     [
@@ -69,10 +75,12 @@ $navItems = [
         'chemin'  => '#',
         'droit'   => 'USERS_LIRE',
         'sousmenu' => [
-            ['libelle' => 'Liste des utilisateurs', 'chemin' => '/utilisateurs'],
-            ['libelle' => 'Groupes',                'chemin' => '/groupes'],
-            ['libelle' => 'Droits d\'accès',        'chemin' => '/droits'],
-            ['libelle' => 'Paramètres de connexion','chemin' => '/parametres'],
+            ['libelle' => 'Liste des utilisateurs', 'chemin' => '/utilisateurs',  'droit' => 'USERS_LIRE'],
+            ['libelle' => 'Groupes',                'chemin' => '/groupes',       'droit' => 'USERS_MODIFIER'],
+            ['libelle' => 'Droits d\'accès',        'chemin' => '/droits',        'droit' => 'USERS_MODIFIER'],
+            ['libelle' => 'Paramètres de connexion','chemin' => '/parametres',    'droit' => null],
+            ['libelle' => 'Journal d\'audit',         'chemin' => '/audit',         'droit' => 'USERS_MODIFIER'],
+            ['libelle' => 'Corbeille',               'chemin' => '/utilisateurs/corbeille',     'droit' => 'USERS_MODIFIER'],
         ],
     ],
 ];
@@ -111,7 +119,7 @@ if (!empty($moduleActif) && !in_array($moduleActif, $openModules)) {
                     <?= htmlspecialchars($item['separateur']) ?>
                 </p>
 
-            <?php elseif ($item['droit'] === null || Auth::peut($item['droit'] ?? '')): ?>
+            <?php elseif ($item['droit'] === null || Auth::peut($item['droit'] ?? '')):?>
                 <?php
                     $estActif     = $moduleActif === $item['module'];
                     $aSousmenu    = !empty($item['sousmenu']);
@@ -146,11 +154,19 @@ if (!empty($moduleActif) && !in_array($moduleActif, $openModules)) {
                              style="<?= $estOuvert ? '' : 'display: none;' ?>">
                             <div class="submenu">
                                 <?php foreach ($item['sousmenu'] as $sous): ?>
-                                    <a href="<?= BASE_URL . $sous['chemin'] ?>"
-                                       class="submenu-link"
-                                       data-nav-close>
-                                        <?= htmlspecialchars($sous['libelle']) ?>
-                                    </a>
+                                    <?php if (isset($sous['separateur'])): ?>
+                                        <p class="submenu-separateur"><?= htmlspecialchars(($sous['separateur'] ?? '') ?? '') ?></p>
+                                        <?php continue; ?>
+                                    <?php endif; ?>
+
+                                    <?php if (!isset($sous['droit']) || $sous['droit'] === null || \Auth::peut($sous['droit'])): ?>
+                                        <?php $sousChemin = $sous['chemin'] ?? $sous['url'] ?? '#'; $sousLib = $sous['libelle'] ?? ''; ?>
+                                        <a href="<?= BASE_URL . $sousChemin ?>"
+                                           class="submenu-link"
+                                           data-nav-close>
+                                            <?= htmlspecialchars($sousLib) ?>
+                                        </a>
+                                    <?php endif; ?>
                                 <?php endforeach; ?>
                             </div>
                         </div>
@@ -173,6 +189,7 @@ if (!empty($moduleActif) && !in_array($moduleActif, $openModules)) {
             </div>
             <a href="<?= BASE_URL ?>/deconnexion" class="logout-btn" title="Se déconnecter">
                 <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Déconnexion</span>
             </a>
         </div>
     </div>

@@ -13,14 +13,14 @@ $moduleAssets = $moduleAssets ?? '';  // ← NOUVEAU : pour les assets spécifiq
     <title><?= $titrePage ?> — SGestion</title>
     
     <!-- CSS GLOBAL -->
-    <link rel="stylesheet" href="../../public/assets/css/app.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/app.css">
     
     <!-- CSS SPÉCIFIQUE AU MODULE (si défini) -->
     <?php if (!empty($moduleAssets)): ?>
-        <link rel="stylesheet" href="../../public/assets/css/modules/<?= $moduleAssets ?>.css">
+        <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/modules/<?= $moduleAssets ?>.css">
     <?php endif; ?>
     
-    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"> -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body class="h-full">
 
@@ -76,11 +76,15 @@ $moduleAssets = $moduleAssets ?? '';  // ← NOUVEAU : pour les assets spécifiq
 </div>
 
 <!-- JS GLOBAL -->
-<script src="../../public/assets/js/app.js" defer></script>
+<script>
+    // Exposer BASE_URL en JS pour les scripts front-end
+    window.BASE_URL = "<?= BASE_URL ?>";
+</script>
+<script src="<?= BASE_URL ?>/assets/js/app.js" defer></script>
 
 <!-- JS SPÉCIFIQUE AU MODULE (si défini) -->
 <?php if (!empty($moduleAssets)): ?>
-    <script src="../../public/assets/js/modules/<?= $moduleAssets ?>.js" defer></script>
+    <script src="<?= BASE_URL ?>/assets/js/modules/<?= $moduleAssets ?>.js" defer></script>
 <?php endif; ?>
 
 </body>
